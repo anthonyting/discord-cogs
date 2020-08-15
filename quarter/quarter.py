@@ -79,10 +79,10 @@ class Quarter(commands.Cog):
 
                     filename = f"{originalWord.title().replace(' ', '').lower()}"
                     # https://stackoverflow.com/a/13593932/11972694
-                    re.sub('[^\w\-_\. ]', '_', filename)
+                    filename = re.sub('[^\w\-_\. ]', '_', filename)
 
                     imagePath = os.path.join(root_dir, filename)
-                    quarter = Path(filename)
+                    quarter = Path(imagePath)
                     if (quarter.exists()):
                         print(f"Cached {originalWord}")
                     else:
@@ -124,5 +124,6 @@ class Quarter(commands.Cog):
                         await ctx.send(message, file=discord.File(fp=image_binary, filename=f"Quarter{filename}.png"))
             except Exception as e:
                 print("Error crawling and serving: ", e)
+                await ctx.send(f"{caller} Error getting Quarter{filename}")
 
             running = False
