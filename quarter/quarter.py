@@ -122,6 +122,6 @@ class Quarter(commands.Cog):
                         message = f"{replyTo} Quarter{filename} "
                         await ctx.send(message, file=discord.File(fp=image_binary, filename=f"Quarter{filename}.png"))
             except Exception as e:
-                print("Error crawling and serving: " + e)
+                print("Error crawling and serving: ", e)
 
             running = False
