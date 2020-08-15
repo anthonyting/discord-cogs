@@ -45,6 +45,10 @@ class Quarter(commands.Cog):
             await ctx.send(f"{ctx.message.author.mention} QuarterLimit was reached {self.count}/{dailyLimit}, Quarter{something.title()} not retrieved.")
             return
 
+        mention = ctx.message.author.mention
+        if (someone):
+            mention = someone.mention
+
         if (len(os.listdir(root_dir)) >= 100):
             files = glob.glob(root_dir)
             for f, i in enumerate(files):
@@ -52,7 +56,7 @@ class Quarter(commands.Cog):
                 if (i >= 50):
                     break
 
-        self.queue.append(something)
+        self.queue.append((something, mention, ctx.message.author.mention))
         self.count += 1
         if (running):
             return
@@ -68,7 +72,7 @@ class Quarter(commands.Cog):
                 feeder_cls=CustomGoogleFeeder
             )
             while (self.queue):
-                word = self.queue.pop()
+                word, replyTo, caller = self.queue.pop()
                 print(f"Getting {word}")
                 imagePath = os.path.join(root_dir, word.lower())
                 quarter = Path(imagePath)
@@ -80,7 +84,7 @@ class Quarter(commands.Cog):
                 filename = f"{word.title().replace(' ', '')}"
 
                 if (not quarter.exists()):
-                    await ctx.send(f"{ctx.message.author.mention} Quarter{filename} does not exist sorry")
+                    await ctx.send(f"{caller} Quarter{filename} does not exist sorry")
                     continue
 
                 im = Image.open(imagePath)
@@ -109,9 +113,6 @@ class Quarter(commands.Cog):
                     image_binary.seek(0)
 
                     print(f"Sending Quarter{filename}")
-                    replyTo = ctx.message.author.mention
-                    if (someone):
-                        replyTo = someone.mention
 
                     print(f"QuarterLimit: {self.count}/{dailyLimit}")
                     message = f"{replyTo} Quarter{filename} "
