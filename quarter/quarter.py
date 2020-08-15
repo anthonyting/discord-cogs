@@ -71,51 +71,54 @@ class Quarter(commands.Cog):
                 parser_cls=CustomGoogleParser,
                 feeder_cls=CustomGoogleFeeder
             )
-            while (self.queue):
-                word, replyTo, caller = self.queue.pop()
-                print(f"Getting {word}")
-                imagePath = os.path.join(root_dir, word.lower())
-                quarter = Path(imagePath)
-                if (quarter.exists()):
-                    print(f"Cached {word}")
-                else:
-                    self.crawler.crawl(keyword=word, max_num=1)
+            try:
+                while (self.queue):
+                    word, replyTo, caller = self.queue.pop()
+                    print(f"Getting {word}")
+                    imagePath = os.path.join(root_dir, word.lower())
+                    quarter = Path(imagePath)
+                    if (quarter.exists()):
+                        print(f"Cached {word}")
+                    else:
+                        self.crawler.crawl(keyword=word, max_num=1)
 
-                filename = f"{word.title().replace(' ', '')}"
+                    filename = f"{word.title().replace(' ', '')}"
 
-                if (not quarter.exists()):
-                    await ctx.send(f"{caller} Quarter{filename} does not exist sorry")
-                    continue
+                    if (not quarter.exists()):
+                        await ctx.send(f"{caller} Quarter{filename} does not exist sorry")
+                        continue
 
-                im = Image.open(imagePath)
-                width, height = im.size
+                    im = Image.open(imagePath)
+                    width, height = im.size
 
-                getRegion = bool(random.getrandbits(1))
+                    getRegion = bool(random.getrandbits(1))
 
-                topLimit = 0
-                bottomLimit = height
-                if (getRegion):  # random square region with quarter area
-                    region = width * height
-                    quarterRegion = math.floor((region/4) ** (1/2))
-                    leftLimit = random.randint(0, width - quarterRegion)
-                    rightLimit = leftLimit + quarterRegion
-                    topLimit = random.randint(0, height - quarterRegion)
-                    bottomLimit = topLimit + quarterRegion
-                else:  # either left middle or right middle
-                    moved = random.randint(1, 2)
-                    leftLimit = moved * width/4
-                    rightLimit = (1 + moved) * width/4
-                cropped = im.convert('RGB').crop(
-                    (leftLimit, topLimit, rightLimit, bottomLimit))
-                cropped.thumbnail((800, 800), Image.ANTIALIAS)
-                with io.BytesIO() as image_binary:
-                    cropped.save(image_binary, 'PNG')
-                    image_binary.seek(0)
+                    topLimit = 0
+                    bottomLimit = height
+                    if (getRegion):  # random square region with quarter area
+                        region = width * height
+                        quarterRegion = math.floor((region/4) ** (1/2))
+                        leftLimit = random.randint(0, width - quarterRegion)
+                        rightLimit = leftLimit + quarterRegion
+                        topLimit = random.randint(0, height - quarterRegion)
+                        bottomLimit = topLimit + quarterRegion
+                    else:  # either left middle or right middle
+                        moved = random.randint(1, 2)
+                        leftLimit = moved * width/4
+                        rightLimit = (1 + moved) * width/4
+                    cropped = im.convert('RGB').crop(
+                        (leftLimit, topLimit, rightLimit, bottomLimit))
+                    cropped.thumbnail((800, 800), Image.ANTIALIAS)
+                    with io.BytesIO() as image_binary:
+                        cropped.save(image_binary, 'PNG')
+                        image_binary.seek(0)
 
-                    print(f"Sending Quarter{filename}")
+                        print(f"Sending Quarter{filename}")
 
-                    print(f"QuarterLimit: {self.count}/{dailyLimit}")
-                    message = f"{replyTo} Quarter{filename} "
-                    await ctx.send(message, file=discord.File(fp=image_binary, filename=f"Quarter{filename}.png"))
+                        print(f"QuarterLimit: {self.count}/{dailyLimit}")
+                        message = f"{replyTo} Quarter{filename} "
+                        await ctx.send(message, file=discord.File(fp=image_binary, filename=f"Quarter{filename}.png"))
+            except Exception as e:
+                print("Error crawling and serving: " + e)
 
             running = False
