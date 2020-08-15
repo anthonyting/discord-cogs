@@ -103,6 +103,7 @@ class Quarter(commands.Cog):
                     rightLimit = (1 + moved) * width/4
                 cropped = im.convert('RGB').crop(
                     (leftLimit, topLimit, rightLimit, bottomLimit))
+                cropped.thumbnail((800, 800), Image.ANTIALIAS)
                 with io.BytesIO() as image_binary:
                     cropped.save(image_binary, 'PNG')
                     image_binary.seek(0)
