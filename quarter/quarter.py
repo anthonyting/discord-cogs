@@ -77,11 +77,11 @@ class Quarter(commands.Cog):
                     originalWord, replyTo, caller = self.queue.pop()
                     print(f"Getting {originalWord}")
 
-                    filename = f"{originalWord.title().replace(' ', '').lower()}"
+                    unescapedFilename = f"{originalWord.title().replace(' ', '').lower()}"
                     # https://stackoverflow.com/a/13593932/11972694
-                    filename = re.sub('[^\w\-_\. ]', '_', filename)
+                    escapedFilename = re.sub('[^\w\-_\. ]', '', unescapedFilename)
 
-                    imagePath = os.path.join(root_dir, filename)
+                    imagePath = os.path.join(root_dir, escapedFilename)
                     quarter = Path(imagePath)
                     if (quarter.exists()):
                         print(f"Cached {originalWord}")
@@ -89,7 +89,7 @@ class Quarter(commands.Cog):
                         self.crawler.crawl(keyword=originalWord, max_num=1)
 
                     if (not quarter.exists()):
-                        await ctx.send(f"{caller} Quarter{filename} does not exist sorry")
+                        await ctx.send(f"{caller} Quarter{escapedFilename} does not exist sorry")
                         continue
 
                     im = Image.open(imagePath)
@@ -117,13 +117,13 @@ class Quarter(commands.Cog):
                         cropped.save(image_binary, 'PNG')
                         image_binary.seek(0)
 
-                        print(f"Sending Quarter{filename}")
+                        print(f"Sending Quarter{unescapedFilename}")
 
                         print(f"QuarterLimit: {self.count}/{dailyLimit}")
-                        message = f"{replyTo} Quarter{filename} "
-                        await ctx.send(message, file=discord.File(fp=image_binary, filename=f"Quarter{filename}.png"))
+                        message = f"{replyTo} Quarter{unescapedFilename} "
+                        await ctx.send(message, file=discord.File(fp=image_binary, filename=f"Quarter{escapedFilename}.png"))
             except Exception as e:
                 print("Error crawling and serving: ", e)
-                await ctx.send(f"{caller} Error getting Quarter{filename}")
+                await ctx.send(f"{caller} Error getting Quarter{unescapedFilename}")
 
             running = False
