@@ -73,16 +73,19 @@ class Quarter(commands.Cog):
             )
             try:
                 while (self.queue):
-                    word, replyTo, caller = self.queue.pop()
-                    print(f"Getting {word}")
-                    imagePath = os.path.join(root_dir, word.lower())
-                    quarter = Path(imagePath)
-                    if (quarter.exists()):
-                        print(f"Cached {word}")
-                    else:
-                        self.crawler.crawl(keyword=word, max_num=1)
+                    originalWord, replyTo, caller = self.queue.pop()
+                    print(f"Getting {originalWord}")
 
-                    filename = f"{word.title().replace(' ', '')}"
+                    filename = f"{originalWord.title().replace(' ', '').lower()}"
+                    # https://stackoverflow.com/a/13593932/11972694
+                    re.sub('[^\w\-_\. ]', '_', filename)
+
+                    imagePath = os.path.join(root_dir, filename)
+                    quarter = Path(filename)
+                    if (quarter.exists()):
+                        print(f"Cached {originalWord}")
+                    else:
+                        self.crawler.crawl(keyword=originalWord, max_num=1)
 
                     if (not quarter.exists()):
                         await ctx.send(f"{caller} Quarter{filename} does not exist sorry")
