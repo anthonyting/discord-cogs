@@ -11,18 +11,20 @@ import logging
 import typing
 import random
 import math
+import glob
 
 root_dir = './CustomCogs/quarter/temp'
 running = False
 dailyLimit = 100
 
+
 class Quarter(commands.Cog):
     """Quarter"""
-    
+
     def __init__(self):
         self.queue = []
         self.count = 0
-    
+
     @commands.command()
     @commands.is_owner()
     async def quarterdata(self, ctx):
@@ -39,16 +41,23 @@ class Quarter(commands.Cog):
         """
         global running, dailyLimit
 
-        if (dailyLimit <= self.count or len(os.listdir(root_dir)) >= 100):
+        if (dailyLimit <= self.count):
             await ctx.send(f"{ctx.message.author.mention} QuarterLimit was reached {self.count}/{dailyLimit}, Quarter{something.title()} not retrieved.")
             return
+
+        if (len(os.listdir(root_dir)) >= 100):
+            files = glob.glob(root_dir)
+            for f, i in enumerate(files):
+                os.remove(f)
+                if (i >= 50):
+                    break
 
         self.queue.append(something)
         self.count += 1
         if (running):
             return
         running = True
-        
+
         async with ctx.typing():
             # create a new one every time because otherwise it's broken
             self.crawler = CustomGoogleCrawler(
@@ -76,23 +85,24 @@ class Quarter(commands.Cog):
 
                 im = Image.open(imagePath)
                 width, height = im.size
-                
+
                 getRegion = bool(random.getrandbits(1))
-                
+
                 topLimit = 0
                 bottomLimit = height
-                if (getRegion): # random square region with quarter area
+                if (getRegion):  # random square region with quarter area
                     region = width * height
                     quarterRegion = math.floor((region/4) ** (1/2))
                     leftLimit = random.randint(0, width - quarterRegion)
                     rightLimit = leftLimit + quarterRegion
                     topLimit = random.randint(0, height - quarterRegion)
                     bottomLimit = topLimit + quarterRegion
-                else: # either left middle or right middle
+                else:  # either left middle or right middle
                     moved = random.randint(1, 2)
                     leftLimit = moved * width/4
                     rightLimit = (1 + moved) * width/4
-                cropped = im.convert('RGB').crop((leftLimit, topLimit, rightLimit, bottomLimit)) 
+                cropped = im.convert('RGB').crop(
+                    (leftLimit, topLimit, rightLimit, bottomLimit))
                 with io.BytesIO() as image_binary:
                     cropped.save(image_binary, 'PNG')
                     image_binary.seek(0)
