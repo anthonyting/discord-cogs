@@ -13,6 +13,7 @@ import random
 import math
 import glob
 import re
+import urllib
 
 root_dir = './CustomCogs/quarter/temp'
 running = False
@@ -120,7 +121,8 @@ class Quarter(commands.Cog):
                         print(f"Sending Quarter{unescapedFilename}")
 
                         print(f"QuarterLimit: {self.count}/{dailyLimit}")
-                        message = f"{replyTo} Quarter{unescapedFilename} "
+                        link = f"https://goo.gl/search?{urllib.parse.quote(originalWord)}&tbm=isch&safe=active"
+                        message = f"{replyTo} Quarter{unescapedFilename} {link}"
                         await ctx.send(message, file=discord.File(fp=image_binary, filename=f"Quarter{escapedFilename}.png"))
             except Exception as e:
                 print("Error crawling and serving: ", e)
