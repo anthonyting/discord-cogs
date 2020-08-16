@@ -78,9 +78,9 @@ class Quarter(commands.Cog):
                     originalWord, replyTo, caller = self.queue.pop()
                     print(f"Getting {originalWord}")
 
-                    unescapedFilename = f"{originalWord.title().replace(' ', '').lower()}"
+                    displayName = f"{originalWord.title().replace(' ', '')}"
                     # https://stackoverflow.com/a/13593932/11972694
-                    escapedFilename = re.sub('[^\w\-_\. ]', '', unescapedFilename)
+                    escapedFilename = re.sub('[^\w\-_\. ]', '', displayName.lower())
 
                     imagePath = os.path.join(root_dir, escapedFilename)
                     quarter = Path(imagePath)
@@ -118,14 +118,14 @@ class Quarter(commands.Cog):
                         cropped.save(image_binary, 'PNG')
                         image_binary.seek(0)
 
-                        print(f"Sending Quarter{unescapedFilename}")
+                        print(f"Sending Quarter{displayName}")
 
                         print(f"QuarterLimit: {self.count}/{dailyLimit}")
                         link = f"https://goo.gl/search?{urllib.parse.quote(originalWord)}&tbm=isch&safe=active"
-                        message = f"{replyTo} Quarter{unescapedFilename}\n{link}"
+                        message = f"{replyTo} Quarter{displayName}\n{link}"
                         await ctx.send(message, file=discord.File(fp=image_binary, filename=f"Quarter{escapedFilename}.png"))
             except Exception as e:
                 print("Error crawling and serving: ", e)
-                await ctx.send(f"{caller} Error getting Quarter{unescapedFilename}")
+                await ctx.send(f"{caller} Error getting Quarter{displayName}")
 
             running = False
