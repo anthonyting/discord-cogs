@@ -122,7 +122,7 @@ class Quarter(commands.Cog):
 
                         print(f"QuarterLimit: {self.count}/{dailyLimit}")
                         link = f"https://goo.gl/search?{urllib.parse.quote(originalWord)}&tbm=isch&safe=active"
-                        message = f"{replyTo} Quarter{unescapedFilename} {link}"
+                        message = f"{replyTo} Quarter{unescapedFilename}\n{link}"
                         await ctx.send(message, file=discord.File(fp=image_binary, filename=f"Quarter{escapedFilename}.png"))
             except Exception as e:
                 print("Error crawling and serving: ", e)
