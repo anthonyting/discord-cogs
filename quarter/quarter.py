@@ -87,10 +87,10 @@ class Quarter(commands.Cog):
                     if (quarter.exists()):
                         print(f"Cached {originalWord}")
                     else:
-                        self.crawler.crawl(keyword=originalWord, max_num=1)
+                        self.crawler.crawl(keyword=escapedFilename, max_num=1) # must download with escaped name so it saves properly
 
                     if (not quarter.exists()):
-                        await ctx.send(f"{caller} Quarter{escapedFilename} does not exist sorry")
+                        await ctx.send(f"{caller} Quarter{displayName} does not exist sorry")
                         continue
 
                     im = Image.open(imagePath)
