@@ -47,6 +47,10 @@ class Quarter(commands.Cog):
             await ctx.send(f"{ctx.message.author.mention} QuarterLimit was reached {self.count}/{dailyLimit}, Quarter{something.title()} not retrieved.")
             return
 
+        if (len(something) >= 150):
+            await ctx.send(f"{ctx.message.author.mention} Your quarter request is too long")
+            return
+
         mention = ctx.message.author.mention
         if (someone):
             mention = someone.mention
@@ -79,15 +83,16 @@ class Quarter(commands.Cog):
                     print(f"Getting {originalWord}")
 
                     displayName = f"{originalWord.title().replace(' ', '')}"
-                    # https://stackoverflow.com/a/13593932/11972694
-                    escapedFilename = re.sub('[^\w\-_\. ]', '', displayName.lower())
+
+                    escapedFilename = urllib.parse.quote(displayName.lower())[0:150]
 
                     imagePath = os.path.join(root_dir, escapedFilename)
                     quarter = Path(imagePath)
                     if (quarter.exists()):
                         print(f"Cached {originalWord}")
                     else:
-                        self.crawler.crawl(keyword=escapedFilename, max_num=1) # must download with escaped name so it saves properly
+                        # must download with escaped name so it saves properly
+                        self.crawler.crawl(keyword=escapedFilename, max_num=1)
 
                     if (not quarter.exists()):
                         await ctx.send(f"{caller} Quarter{displayName} does not exist sorry")
