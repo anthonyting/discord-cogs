@@ -14,10 +14,18 @@ import math
 import glob
 import re
 import urllib
+import posixpath
 
 root_dir = './CustomCogs/quarter/temp'
 running = False
 dailyLimit = 100
+validURL = re.compile( # https://stackoverflow.com/a/7160778
+        r'^(?:http|ftp)s?://' # http:// or https://
+        r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|' #domain...
+        r'localhost|' #localhost...
+        r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})' # ...or ip
+        r'(?::\d+)?' # optional port
+        r'(?:/?|[/?]\S+)$', re.IGNORECASE)
 
 
 class Quarter(commands.Cog):
@@ -35,7 +43,7 @@ class Quarter(commands.Cog):
 
     @commands.command()
     @commands.guild_only()
-    async def quarter(self, ctx, something: str, someone: typing.Optional[discord.Member] = None):
+    async def quarter(self, ctx, something: typing.Optional[str] = None, someone: typing.Optional[discord.Member] = None):
         """
         Examples:
         - !quarter trout
@@ -47,7 +55,7 @@ class Quarter(commands.Cog):
             await ctx.send(f"{ctx.message.author.mention} QuarterLimit was reached {self.count}/{dailyLimit}, Quarter{something.title()} not retrieved.")
             return
 
-        if (len(something) >= 150):
+        if (something and len(something) >= 150):
             await ctx.send(f"{ctx.message.author.mention} Your quarter request is too long")
             return
 
@@ -62,7 +70,34 @@ class Quarter(commands.Cog):
                 if (i >= 50):
                     break
 
-        self.queue.append((something, mention, ctx.message.author.mention))
+        if (ctx.message.attachments and not something):
+            attachment = ctx.message.attachments[0]
+            try:
+                self.queue.append((os.path.splitext(attachment.filename)[0], mention, ctx.message.author.mention, 'attachment', await attachment.read(use_cached=True), False))
+            except Exception as e:
+                print("Error getting attachment: ", e)
+                self.queue.append((os.path.splitext(attachment.filename)[0], mention, ctx.message.author.mention, 'attachment', None, True))
+        elif (not something):
+            await ctx.send(f"{ctx.message.author.mention} Usage: !quarter <thing>")
+            return
+        elif (re.match(validURL, something) is not None):
+            try:
+                user_agent = 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.9.0.7) Gecko/2009021910 Firefox/3.0.7'
+                image_formats = ("image/png", "image/jpeg", "image/gif")
+
+                request = urllib.request.Request(something, headers={'User-Agent': user_agent})
+                with urllib.request.urlopen(request) as response:
+                    if (response.info()["content-type"] not in image_formats):
+                        await ctx.send(f"{ctx.message.author.mention} That wasn't an image")
+                        return
+                    filename = os.path.splitext(posixpath.basename(urllib.parse.urlsplit(something).path))[0]
+                    self.queue.append((filename, mention, ctx.message.author.mention, 'attachment', response.read(), False))
+            except Exception as e:
+                print("Error getting url: ", e)
+                self.queue.append(('something', mention, ctx.message.author.mention, 'attachment', None, True))
+        else:
+            self.queue.append(
+                (something, mention, ctx.message.author.mention, 'search', None, False))
         self.count += 1
         if (running):
             return
@@ -79,26 +114,37 @@ class Quarter(commands.Cog):
             )
             try:
                 while (self.queue):
-                    originalWord, replyTo, caller = self.queue.pop()
+                    originalWord, replyTo, caller, queueType, data, error = self.queue.pop()
+
+                    if (error):
+                        await ctx.send(f"{caller} Error getting Quarter{originalWord}")
+                        return
+
                     print(f"Getting {originalWord}")
 
                     displayName = f"{originalWord.title().replace(' ', '')}"
 
-                    escapedFilename = urllib.parse.quote(displayName.lower())[0:150]
+                    escapedFilename = urllib.parse.quote(
+                        displayName.lower())[0:150]
 
                     imagePath = os.path.join(root_dir, escapedFilename)
-                    quarter = Path(imagePath)
-                    if (quarter.exists()):
-                        print(f"Cached {originalWord}")
+                    if (queueType != 'attachment'):
+                        quarter = Path(imagePath)
+                        if (quarter.exists()):
+                            print(f"Cached {originalWord}")
+                        else:
+                            # must download with escaped name so it saves properly
+                            self.crawler.crawl(
+                                keyword=escapedFilename, max_num=1)
+
+                        if (not quarter.exists()):
+                            await ctx.send(f"{caller} Quarter{displayName} does not exist sorry")
+                            continue
+
+                        im = Image.open(imagePath)
                     else:
-                        # must download with escaped name so it saves properly
-                        self.crawler.crawl(keyword=escapedFilename, max_num=1)
+                        im = Image.open(io.BytesIO(data))
 
-                    if (not quarter.exists()):
-                        await ctx.send(f"{caller} Quarter{displayName} does not exist sorry")
-                        continue
-
-                    im = Image.open(imagePath)
                     width, height = im.size
 
                     getRegion = bool(random.getrandbits(1))
@@ -126,11 +172,14 @@ class Quarter(commands.Cog):
                         print(f"Sending Quarter{displayName}")
 
                         print(f"QuarterLimit: {self.count}/{dailyLimit}")
-                        link = f"https://goo.gl/search?{urllib.parse.quote(originalWord)}&tbm=isch&safe=active"
+                        if (queueType != 'attachment'):
+                            link = f"https://goo.gl/search?{urllib.parse.quote(originalWord)}&tbm=isch&safe=active"
+                        else:
+                            link = ""
                         message = f"{replyTo} Quarter{displayName}\n{link}"
                         await ctx.send(message, file=discord.File(fp=image_binary, filename=f"Quarter{escapedFilename}.png"))
             except Exception as e:
-                print("Error crawling and serving: ", e)
+                print("Error getting and serving: ", e)
                 await ctx.send(f"{caller} Error getting Quarter{displayName}")
 
             running = False
