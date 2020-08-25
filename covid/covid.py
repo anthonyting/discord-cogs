@@ -67,7 +67,7 @@ class Covid(commands.Cog):
             newCasesString += str(newCasesToday) + '\n'
             activeCasesString += str(activeCasesToday) + '\n'
 
-        dateString = datetime.utcfromtimestamp(
+        dateString = datetime.fromtimestamp(
             date // 1000).strftime("%Y/%m/%d %I:%M%p")
 
         embed = discord.Embed(
@@ -113,5 +113,6 @@ class Covid(commands.Cog):
         embed.add_field(name="New Cases (24h)", value=newCasesString, inline=True)
         embed.add_field(name="Active Cases", value=activeCasesString, inline=True)
         embed.set_author(name=f"Source", url=r"https://experience.arcgis.com/experience/a6f23959a8b14bfa989e3cda29297ded", icon_url=r"https://cdn.discordapp.com/attachments/360564259316301836/747043112043544617/BCGov_-_Horizontal_AGOL_Logo_-_White_-_Sun.png")
+        embed.set_footer(text="Updated daily Monday through Friday at 5:00 pm")
         # API: https://services1.arcgis.com/xeMpV7tU1t4KD3Ei/ArcGIS/rest/services/COVID19_Cases_by_BC_Health_Authority/FeatureServer/0
         return embed
