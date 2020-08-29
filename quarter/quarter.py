@@ -154,9 +154,11 @@ class Quarter(commands.Cog):
                     if (getRegion):  # random square region with quarter area
                         region = width * height
                         quarterRegion = math.floor((region/4) ** (1/2))
-                        leftLimit = random.randint(0, width - quarterRegion)
+                        leftRegion = width - quarterRegion
+                        leftLimit = random.randint(0, leftRegion if (leftRegion >= 0) else 0)
                         rightLimit = leftLimit + quarterRegion
-                        topLimit = random.randint(0, height - quarterRegion)
+                        rightRegion = height - quarterRegion
+                        topLimit = random.randint(0, rightRegion if (rightRegion >= 0) else 0)
                         bottomLimit = topLimit + quarterRegion
                     else:  # either left middle or right middle
                         moved = random.randint(1, 2)
