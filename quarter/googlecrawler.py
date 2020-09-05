@@ -3,7 +3,7 @@ from bs4 import BeautifulSoup
 import re
 from urllib.parse import urlencode
 
-class CustomGoogleFeeder(GoogleFeeder):
+class CustomGoogleFeederSafe(GoogleFeeder):
 
     def feed(self, keyword, offset, max_num, language=None, filters=None):
         base_url = 'https://www.google.com/search?'
@@ -22,6 +22,24 @@ class CustomGoogleFeeder(GoogleFeeder):
             self.out_queue.put(url)
             self.logger.debug('put url to url_queue: {}'.format(url))
 
+class CustomGoogleFeeder(GoogleFeeder):
+
+    def feed(self, keyword, offset, max_num, language=None, filters=None):
+        base_url = 'https://www.google.com/search?'
+        self.filter = self.get_filter()
+        filter_str = self.filter.apply(filters, sep=',')
+        for i in range(offset, offset + max_num, 100):
+            params = dict(
+                q=keyword,
+                ijn=int(i / 100),
+                start=i,
+                tbs=filter_str,
+                tbm='isch')
+            if language:
+                params['lr'] = 'lang_' + language
+            url = base_url + urlencode(params)
+            self.out_queue.put(url)
+            self.logger.debug('put url to url_queue: {}'.format(url))
 
 class CustomGoogleParser(GoogleParser):
     def parse(self, response):

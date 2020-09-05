@@ -1,7 +1,7 @@
 from redbot.core import commands
 import discord
 from .crawler import CustomBingCrawler
-from .googlecrawler import CustomGoogleCrawler, CustomGoogleParser, CustomGoogleFeeder
+from .googlecrawler import CustomGoogleCrawler, CustomGoogleParser, CustomGoogleFeeder, CustomGoogleFeederSafe
 from .downloader import CustomDownloader
 import os
 import io
@@ -73,10 +73,10 @@ class Quarter(commands.Cog):
         if (ctx.message.attachments and not something):
             attachment = ctx.message.attachments[0]
             try:
-                self.queue.append((os.path.splitext(attachment.filename)[0], mention, ctx.message.author.mention, 'attachment', await attachment.read(use_cached=True), False))
+                self.queue.append((os.path.splitext(attachment.filename)[0], mention, ctx.message.author.mention, 'attachment', await attachment.read(use_cached=True), False, ctx))
             except Exception as e:
                 print("Error getting attachment: ", e)
-                self.queue.append((os.path.splitext(attachment.filename)[0], mention, ctx.message.author.mention, 'attachment', None, True))
+                self.queue.append((os.path.splitext(attachment.filename)[0], mention, ctx.message.author.mention, 'attachment', None, True, ctx))
         elif (not something):
             await ctx.send(f"{ctx.message.author.mention} Usage: !quarter <thing>")
             return
@@ -91,13 +91,13 @@ class Quarter(commands.Cog):
                         await ctx.send(f"{ctx.message.author.mention} That wasn't an image")
                         return
                     filename = os.path.splitext(posixpath.basename(urllib.parse.urlsplit(something).path))[0]
-                    self.queue.append((filename, mention, ctx.message.author.mention, 'attachment', response.read(), False))
+                    self.queue.append((filename, mention, ctx.message.author.mention, 'attachment', response.read(), False, ctx))
             except Exception as e:
                 print("Error getting url: ", e)
-                self.queue.append(('something', mention, ctx.message.author.mention, 'attachment', None, True))
+                self.queue.append(('something', mention, ctx.message.author.mention, 'attachment', None, True, ctx))
         else:
             self.queue.append(
-                (something, mention, ctx.message.author.mention, 'search', None, False))
+                (something, mention, ctx.message.author.mention, 'search', None, False, ctx))
         self.count += 1
         if (running):
             return
@@ -105,27 +105,28 @@ class Quarter(commands.Cog):
 
         async with ctx.typing():
             # create a new one every time because otherwise it's broken
-            self.crawler = CustomGoogleCrawler(
-                storage={'root_dir': root_dir},
-                log_level=20,
-                downloader_cls=CustomDownloader,
-                parser_cls=CustomGoogleParser,
-                feeder_cls=CustomGoogleFeeder
-            )
+
             try:
                 while (self.queue):
-                    originalWord, replyTo, caller, queueType, data, error = self.queue.pop()
+                    originalWord, replyTo, caller, queueType, data, error, realCtx = self.queue.pop()
+                    self.crawler = CustomGoogleCrawler(
+                        storage={'root_dir': root_dir},
+                        log_level=20,
+                        downloader_cls=CustomDownloader,
+                        parser_cls=CustomGoogleParser,
+                        feeder_cls=CustomGoogleFeeder if realCtx.channel.is_nsfw() else CustomGoogleFeederSafe
+                    )
 
                     if (error):
-                        await ctx.send(f"{caller} Error getting Quarter{originalWord}")
+                        await realCtx.send(f"{caller} Error getting Quarter{originalWord}")
                         return
 
                     print(f"Getting {originalWord}")
 
-                    displayName = f"{originalWord.title().replace(' ', '')}"
+                    displayName = f"{originalWord.title().replace(' ', '').strip()}"
 
                     escapedFilename = urllib.parse.quote(
-                        displayName.lower())[0:150]
+                        originalWord.lower().strip())[0:150]
 
                     imagePath = os.path.join(root_dir, escapedFilename)
                     if (queueType != 'attachment'):
@@ -138,7 +139,7 @@ class Quarter(commands.Cog):
                                 keyword=escapedFilename, max_num=1)
 
                         if (not quarter.exists()):
-                            await ctx.send(f"{caller} Quarter{displayName} does not exist sorry")
+                            await realCtx.send(f"{caller} Quarter{displayName} does not exist sorry")
                             continue
 
                         im = Image.open(imagePath)
@@ -175,11 +176,16 @@ class Quarter(commands.Cog):
 
                         print(f"QuarterLimit: {self.count}/{dailyLimit}")
                         if (queueType != 'attachment'):
-                            link = f"https://goo.gl/search?{urllib.parse.quote(originalWord)}&tbm=isch&safe=active"
+                            link = f"https://goo.gl/search?{urllib.parse.quote(originalWord)}&tbm=isch"
+                            if (not realCtx.channel.is_nsfw()):
+                                link += "&safe=active"
                         else:
                             link = ""
                         message = f"{replyTo} Quarter{displayName}\n{link}"
                         await ctx.send(message, file=discord.File(fp=image_binary, filename=f"Quarter{escapedFilename}.png"))
+
+                        if (realCtx.channel.is_nsfw()):
+                            os.remove(imagePath)
             except Exception as e:
                 print("Error getting and serving: ", e)
                 await ctx.send(f"{caller} Error getting Quarter{displayName}")
