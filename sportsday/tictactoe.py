@@ -9,17 +9,10 @@ class TicTacToe(commands.Cog):
     """Sports Day"""
 
     def __init__(self):
-        self.playing = False
-        self.bj = ""
-        self.bjPlayer = None
-        self.vk = ""
-        self.vkPlayer = None
-        self.sportsdaybj = None
-        self.sportsdayvk = None
         self.board = [0 for _ in range(9)]
         self.options = (('1'), ('2'), ('3'), ('4'),
                         ('5'), ('6'), ('7'), ('8'), ('9'))
-        self.players = {}
+        self.resetGame()
 
     @commands.group(autohelp=True)
     @commands.guild_only()
@@ -29,7 +22,7 @@ class TicTacToe(commands.Cog):
 
     @tic.command()
     async def start(self, ctx: commands.Context):
-        if (not self.sportsdaybj or not self.sportsdayvr):
+        if (not self.sportsdaybj or not self.sportsdayvk):
             self.sportsdaybj = str(discord.utils.get(
                 ctx.guild.emojis, name='sportsdaybj'))
             self.sportsdayvk = str(discord.utils.get(
@@ -38,19 +31,24 @@ class TicTacToe(commands.Cog):
         if (self.playing):
             return await ctx.send(f"{self.bj} is playing with {self.vk} right now")
 
+        if (self.waiting):
+            return await ctx.send(f"{self.bj if self.bj else self.vk} is waiting for a player. Type !tic join to join.")
+
+        self.waiting = True
+
         if (bool(random.getrandbits(1))):
             self.bj = ctx.message.author.display_name
             self.bjPlayer = ctx.message.author
-            await ctx.send(f"{ctx.message.author.display_name} is {self.sportsdaybj}. Waiting for {self.sportsdayvk} with [p]tic join.")
+            await ctx.send(f"{ctx.message.author.display_name} is {self.sportsdaybj}. Waiting for {self.sportsdayvk} with !tic join.")
         else:
             self.vk = ctx.message.author.display_name
             self.vkPlayer = ctx.message.author
-            await ctx.send(f"{ctx.message.author.display_name} is {self.sportsdayvk}. Waiting for {self.sportsdaybj} with [p]tic join.")
+            await ctx.send(f"{ctx.message.author.display_name} is {self.sportsdayvk}. Waiting for {self.sportsdaybj} with !tic join.")
 
     @tic.command()
     async def join(self, ctx: commands.Context):
         if (not self.bj and not self.vk):
-            return await ctx.send(f"[p]tic start to start a game")
+            return await ctx.send(f"!tic start to start a game")
         elif (ctx.author == self.bjPlayer):
             return await ctx.send(f"You're already in the race as {self.sportsdaybj}")
         elif (ctx.author == self.vkPlayer):
@@ -83,13 +81,23 @@ class TicTacToe(commands.Cog):
     async def getInput(self, ctx: commands.Context, turn):
         position = MessagePredicate.contained_in(
             self.options, channel=ctx.channel, user=turn)
-        print(turn)
         try:
             choice = await ctx.bot.wait_for("message", check=position, timeout=35.0)
         except asyncio.TimeoutError:
             return None
 
         return int(choice.content)
+
+    def resetGame(self):
+        self.playing = False
+        self.bj = ""
+        self.bjPlayer = None
+        self.vk = ""
+        self.vkPlayer = None
+        self.sportsdaybj = None
+        self.sportsdayvk = None
+        self.players = {}
+        self.waiting = False
 
     async def startGame(self, ctx: commands.Context):
         self.players['current'] = self.sportsdayvk
@@ -117,4 +125,5 @@ class TicTacToe(commands.Cog):
                     else:
                         await ctx.send("That position is taken, try again")
                 else:
-                    return await ctx.send(f"{self.players['current']} took too long, {self.players['other']} wins")
+                    await ctx.send(f"{self.players['current']} took too long, {self.players['other']} wins")
+                    return self.resetGame()
