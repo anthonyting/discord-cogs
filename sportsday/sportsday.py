@@ -10,7 +10,7 @@ class SportsDay(commands.Cog):
     @commands.guild_only()
     async def sportsday(self, ctx: commands.Context):
         """Sport Day"""
-        ctx.trigger_typing()
+        await ctx.trigger_typing()
 
         sportsdaybj = discord.utils.get(ctx.guild.emojis, name='sportsdaybj')
         sportsdayvr = discord.utils.get(ctx.guild.emojis, name='sportsdayvik')

@@ -1,4 +1,4 @@
-from redbot.core import commands
+from redbot.core import commands, bank
 from redbot.core.utils.predicates import MessagePredicate, ReactionPredicate
 import discord
 import random
@@ -20,9 +20,9 @@ class TicTacToe(commands.Cog):
         pass
 
     @tic.command()
-    async def start(self, ctx: commands.Context):
+    async def start(self, ctx: commands.Context, wager: int = 0):
         if (self.channel and ctx.channel != self.channel):
-          return await ctx.send(f"TicTacToe is being played in {self.channel.name}")
+            return await ctx.send(f"TicTacToe is being played in {self.channel.name}")
 
         self.channel = ctx.channel
 
@@ -33,48 +33,74 @@ class TicTacToe(commands.Cog):
                 ctx.guild.emojis, name='sportsdayvik'))
 
         if (self.playing):
-            return await ctx.send(f"{self.bj} is playing with {self.vk} right now")
+            return await ctx.send(f"{self.bjPlayerName} is playing with {self.vkPlayerName} right now")
 
         if (self.waiting):
-            return await ctx.send(f"{self.bj if self.bj else self.vk} is waiting for a player. Type !tic join to join.")
+            if (self.wager):
+                return await ctx.send(f"{self.bjPlayerName if self.bjPlayerName else self.vkPlayerName} is waiting for a player willing to wager {self.wager} credits. Type !tic join to join.")
+            return await ctx.send(f"{self.bjPlayerName if self.bjPlayerName else self.vkPlayerName} is waiting for a player. Type !tic join to join.")
+
+        minwager = 10
+        maxwager = 1000
+        if (wager and not (minwager <= wager <= maxwager)):
+            return await ctx.send(f"Minimum wager is {minwager} and maximum wager is {maxwager}")
+        else:
+            try:
+                await bank.withdraw_credits(member=ctx.message.author, amount=wager)
+            except ValueError:
+                return await ctx.send(f"{ctx.message.author.mention} You do not have enough credits")
 
         self.waiting = True
+        self.wager = wager
 
         if (bool(random.getrandbits(1))):
-            self.bj = ctx.message.author.display_name
+            self.bjPlayerName = ctx.message.author.display_name
             self.bjPlayer = ctx.message.author
-            await ctx.send(f"{ctx.message.author.display_name} is {self.sportsdaybj}. Waiting for {self.sportsdayvk} with !tic join.")
+            if (self.wager):
+                await ctx.send(f"{ctx.message.author.display_name} is {self.sportsdaybj} wagering {self.wager} credits. Waiting for {self.sportsdayvk} with !tic join.")
+            else:
+                await ctx.send(f"{ctx.message.author.display_name} is {self.sportsdaybj}. Waiting for {self.sportsdayvk} with !tic join.")
         else:
-            self.vk = ctx.message.author.display_name
+            self.vkPlayerName = ctx.message.author.display_name
             self.vkPlayer = ctx.message.author
-            await ctx.send(f"{ctx.message.author.display_name} is {self.sportsdayvk}. Waiting for {self.sportsdaybj} with !tic join.")
-        
+            if (self.wager):
+                await ctx.send(f"{ctx.message.author.display_name} is {self.sportsdayvk} wagering {self.wager} credits. Waiting for {self.sportsdaybj} with !tic join.")
+            else:
+                await ctx.send(f"{ctx.message.author.display_name} is {self.sportsdayvk}. Waiting for {self.sportsdaybj} with !tic join.")
+
         self.cancellationTask = asyncio.create_task(self.timeoutJoin(ctx))
 
     async def timeoutJoin(self, ctx: commands.Context):
-        await asyncio.sleep(20.0)
+        await asyncio.sleep(25.0)
         await ctx.send(f"{ctx.author.mention} nobody joined")
+        if (self.wager):
+            await bank.deposit_credits(member=ctx.author, amount=self.wager)
         return self.resetGame()
 
     @tic.command()
     async def join(self, ctx: commands.Context):
         if (self.channel and ctx.channel != self.channel):
-          return await ctx.send(f"TicTacToe is being played in {self.channel.name}")
+            return await ctx.send(f"TicTacToe is being played in {self.channel.name}")
 
-        if (not self.bj and not self.vk):
+        if (not self.bjPlayerName and not self.vkPlayerName):
             return await ctx.send(f"!tic start to start a game")
         elif (ctx.author == self.bjPlayer):
             return await ctx.send(f"You're already in the race as {self.sportsdaybj}")
         elif (ctx.author == self.vkPlayer):
             return await ctx.send(f"You're already in the race as {self.sportsdayvk}")
 
+        try:
+            await bank.withdraw_credits(member=ctx.message.author, amount=self.wager)
+        except ValueError:
+            return await ctx.send(f"{ctx.message.author.mention} You do not have enough credits")
+
         self.cancellationTask.cancel()
-        if (self.vk):
-            self.bj = ctx.message.author.display_name
+        if (self.vkPlayerName):
+            self.bjPlayerName = ctx.message.author.display_name
             self.bjPlayer = ctx.message.author
             await ctx.send(f"{ctx.message.author.display_name} is {self.sportsdaybj}.")
         else:
-            self.vk = ctx.message.author.display_name
+            self.vkPlayerName = ctx.message.author.display_name
             self.vkPlayer = ctx.message.author
             await ctx.send(f"{ctx.message.author.display_name} is {self.sportsdayvk}.")
 
@@ -92,8 +118,9 @@ class TicTacToe(commands.Cog):
             if (i in [2, 5]):
                 output += "\n"
 
-        await ctx.send(output)
         await ctx.send(extraText)
+        await ctx.send(output)
+
 
     async def getInput(self, ctx: commands.Context, turn):
         position = MessagePredicate.contained_in(
@@ -107,9 +134,9 @@ class TicTacToe(commands.Cog):
 
     def resetGame(self):
         self.playing = False
-        self.bj = ""
+        self.bjPlayerName = ""
         self.bjPlayer = None
-        self.vk = ""
+        self.vkPlayerName = ""
         self.vkPlayer = None
         self.sportsdaybj = None
         self.sportsdayvk = None
@@ -118,21 +145,22 @@ class TicTacToe(commands.Cog):
         self.filledSquares = 0
         self.board = [0 for _ in range(9)]
         self.channel = None
+        self.wager = 0
 
     def checkWin(self):
         for i in range(0, 9, 3):
-          if (self.board[i] == self.board[i + 1] and self.board[i] == self.board[i + 2]):
-            return self.board[i]
-      
+            if (self.board[i] == self.board[i + 1] and self.board[i] == self.board[i + 2]):
+                return self.board[i]
+
         for i in range(3):
-          if (self.board[i] == self.board[i + 3] and self.board[i] == self.board[i + 6]):
-            return self.board[i]
+            if (self.board[i] == self.board[i + 3] and self.board[i] == self.board[i + 6]):
+                return self.board[i]
 
         if (self.board[0] == self.board[4] and self.board[0] == self.board[8]):
-          return self.board[0]
+            return self.board[0]
 
         if (self.board[2] == self.board[4] and self.board[2] == self.board[6]):
-          return self.board[2]
+            return self.board[2]
 
         return None
 
@@ -161,18 +189,45 @@ class TicTacToe(commands.Cog):
                         taken = False
                         self.board[response - 1] = self.players['current']
                         self.filledSquares += 1
-                        if (self.filledSquares == 9):
-                          await self.printBoard(ctx)
-                          await ctx.send(f"DRAW!")
-                          return self.resetGame()
-                        else:
-                          winner = self.checkWin()
-                          if (winner):
+                        winner = self.checkWin()
+
+                        if (winner):
                             await self.printBoard(ctx)
-                            await ctx.send(f"WINNER! {winner}")
+                            winnerPlayer, loserPlayer = None, None
+                            if (winner == self.sportsdaybj):
+                                await ctx.send(f"WINNER! {winner} {self.bjPlayerName}")
+                                winnerPlayer = self.bjPlayer
+                            else:
+                                await ctx.send(f"WINNER! {winner} {self.vkPlayerName}")
+                                winnerPlayer = self.vkPlayer
+                            if (self.wager):
+                                amountWon = int(self.wager * 2 * 0.9)
+                                await bank.deposit_credits(member=winnerPlayer, amount=amountWon)
+                                await ctx.send(f"{winnerPlayer.mention} wins {amountWon}")
+                            return self.resetGame()
+                        elif (self.filledSquares == 9):
+                            await self.printBoard(ctx)
+
+                            if (self.wager):
+                                await bank.deposit_credits(member=self.vkPlayer, amount=self.wager)
+                                await bank.deposit_credits(member=self.bjPlayer, amount=self.wager)
+                                await ctx.send(f"DRAW! Credits refunded")
+                            else:
+                                await ctx.send(f"DRAW!")
                             return self.resetGame()
                     else:
                         await ctx.send("That position is taken, try again")
                 else:
-                    await ctx.send(f"{self.players['current']} took too long\n WINNER! {self.players['other']}")
+                    reply = f"{self.players['current']} took too long\n"
+                    winner = self.players['other']
+                    if (winner == self.sportsdaybj):
+                        await ctx.send(reply + f"WINNER! {winner} {self.bjPlayerName}")
+                        winnerPlayer = self.bjPlayer
+                    else:
+                        await ctx.send(reply + f"WINNER! {winner} {self.vkPlayerName}")
+                        winnerPlayer = self.vkPlayer
+                    if (self.wager):
+                        amountWon = int(self.wager * 2 * 0.9)
+                        await bank.deposit_credits(member=winnerPlayer, amount=amountWon)
+                        await ctx.send(f"{winnerPlayer.mention} wins {amountWon}")
                     return self.resetGame()
