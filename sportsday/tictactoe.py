@@ -201,7 +201,7 @@ class TicTacToe(commands.Cog):
                                 await ctx.send(f"WINNER! {winner} {self.vkPlayerName}")
                                 winnerPlayer = self.vkPlayer
                             if (self.wager):
-                                amountWon = int(self.wager * 2 * 0.9)
+                                amountWon = int(self.wager * 2 * 0.97)
                                 await bank.deposit_credits(member=winnerPlayer, amount=amountWon)
                                 await ctx.send(f"{winnerPlayer.mention} wins {amountWon}")
                             return self.resetGame()
@@ -227,7 +227,7 @@ class TicTacToe(commands.Cog):
                         await ctx.send(reply + f"WINNER! {winner} {self.vkPlayerName}")
                         winnerPlayer = self.vkPlayer
                     if (self.wager):
-                        amountWon = int(self.wager * 2 * 0.9)
+                        amountWon = int(self.wager * 2 * 0.97)
                         await bank.deposit_credits(member=winnerPlayer, amount=amountWon)
                         await ctx.send(f"{winnerPlayer.mention} wins {amountWon}")
                     return self.resetGame()
