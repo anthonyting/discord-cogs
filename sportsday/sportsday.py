@@ -29,4 +29,4 @@ class SportsDay(commands.Cog):
         cols = random.randint(1, 6)
 
         message = await ctx.send(((str(sportsday) * cols + "\n") * rows))
-        await message.add_reaction(sportsday)
+        # await message.add_reaction(sportsday)
