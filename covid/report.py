@@ -5,7 +5,7 @@ import re
 from bs4.element import PageElement, Tag
 import pyteaser
 from datetime import datetime
-import time
+import asyncio
 
 class Report(commands.Cog):
     """Start report"""
@@ -29,7 +29,7 @@ class Report(commands.Cog):
         await ctx.send("Reporting in this channel")
         while(True):
             if (not self.firstRun):
-                time.sleep(3600)  # one hour
+                await asyncio.sleep(3600.0)
             self.firstRun = False
             if (self.today != datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)):
                 with urlopen('https://news.gov.bc.ca/ministries/health') as directoryUrl:
