@@ -29,7 +29,7 @@ class Report(commands.Cog):
         self.running = True
 
         await ctx.send("Reporting in this channel")
-        while(True):
+        while(not self.foundToday):
             if (not self.firstRun):
                 await asyncio.sleep(3600.0)
             self.firstRun = False
