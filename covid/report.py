@@ -69,7 +69,7 @@ class Report(commands.Cog):
                                             re.compile('“'), ' ', text)).strip()
                                         self.foundToday = True
                                         embed = discord.Embed(
-                                            title="BC Covid-19 Joint Statement",
+                                            title="BC COVID-19 Joint Statement",
                                             description=" ".join(
                                                 pyteaser.Summarize(statement.getText(), text)),
                                             colour=discord.Colour.blue()
