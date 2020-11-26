@@ -1,4 +1,5 @@
 from redbot.core import commands
+import discord
 import bs4
 from urllib.request import urlopen
 import re
@@ -6,6 +7,7 @@ from bs4.element import PageElement, Tag
 import pyteaser
 from datetime import datetime
 import asyncio
+
 
 class Report(commands.Cog):
     """Start report"""
@@ -66,6 +68,13 @@ class Report(commands.Cog):
                                         text = re.sub(re.compile('”'), '', re.sub(
                                             re.compile('“'), ' ', text)).strip()
                                         self.foundToday = True
-                                        await ctx.send(" ".join(pyteaser.Summarize(
-                                            statement.getText(), text)))
+                                        embed = discord.Embed(
+                                            title="BC Covid-19 Joint Statement",
+                                            description=" ".join(
+                                                pyteaser.Summarize(statement.getText(), text)),
+                                            colour=discord.Colour.blue()
+                                        )
+                                        embed.set_author(name=f"Source", url=statement['href'], icon_url=r'https://cdn.discordapp.com/attachments/360564259316301836/747043112043544617/BCGov_-_Horizontal_AGOL_Logo_-_White_-_Sun.png')
+
+                                        await ctx.send(embed=embed)
                                         continue
