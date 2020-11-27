@@ -6,7 +6,7 @@ from urllib.request import urlopen
 import re
 from bs4.element import PageElement, Tag
 import pyteaser
-from datetime import datetime
+from datetime import datetime, timedelta
 import asyncio
 
 
@@ -14,22 +14,31 @@ class Report(commands.Cog):
     """Start report"""
 
     def __init__(self):
-        self.running = False
         self.today = None
         self.foundToday = False
         self.firstRun = True
         self.task: Task = None
+        self.count = 0
+
+    def stopTask(self):
+        if (self.task):
+            self.task.cancel()
+            self.task = None
+            print("report.py: stopped task succesfully")
+        else:
+            print("report.py: no task to stop")
 
     @commands.command(pass_context=True)
     @commands.is_owner()
-    async def covidreset(self, ctx: commands.Context):
+    async def covidreset(self, ctx: commands.Context = None):
+        if (not self.task):
+            await ctx.send("Task not started")
+
         self.foundToday = False
         self.firstRun = False
         self.today = None
-        self.running = False
-        if (self.task):
-            self.task.cancel()
-        await ctx.send("Reset reporting success")
+        self.stopTask()
+        await ctx.send("Task reset success")
 
     @commands.command(pass_context=True)
     @commands.guild_only()
@@ -43,9 +52,29 @@ class Report(commands.Cog):
         self.task = asyncio.create_task(self.run(ctx))
 
     async def run(self, ctx: commands.Context):
-        while(not self.foundToday):
+        while(self.task is not None):
+            print(f"Loop task count: {self.count}. Time: {datetime.now()}")
+            self.count += 1
+            # temporarily wait to prevent untested infinite loops
+            await asyncio.sleep(10)
+            now: datetime = datetime.now()
+            noon: datetime = now.replace(
+                hours=12, minute=0, second=0, microsecond=0)
+            night: datetime = now.replace(
+                hours=22, minute=0, second=0, microsecond=0)
+            if (now > noon):
+                if (self.foundToday or now > night):
+                    # wait for tomorrow if we have today or if it's too late
+                    noonTomorrow: datetime = noon + timedelta(days=1)
+                    timeUntilNextCheck: float = (
+                        noonTomorrow - now).total_seconds()
+                else: # otherwise check every 15 minutes
+                    timeUntilNextCheck: float = 750.0  # 15 minutes
+            else:
+                timeUntilNextCheck: float = (noon - now).total_seconds()
+                self.foundToday = False
             if (not self.firstRun):
-                await asyncio.sleep(3600.0)
+                await asyncio.sleep(timeUntilNextCheck)
             self.firstRun = False
             if (self.today != datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)):
                 with urlopen('https://news.gov.bc.ca/ministries/health') as directoryUrl:
@@ -91,5 +120,5 @@ class Report(commands.Cog):
                                         embed.set_author(
                                             name=f"Source", url=statement['href'], icon_url=r'https://cdn.discordapp.com/attachments/360564259316301836/747043112043544617/BCGov_-_Horizontal_AGOL_Logo_-_White_-_Sun.png')
 
+                                        self.count = 0
                                         await ctx.send(embed=embed)
-                                        continue
