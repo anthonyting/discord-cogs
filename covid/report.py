@@ -1,5 +1,4 @@
 from asyncio.tasks import Task
-from .covid import covid
 from redbot.core import commands
 import discord
 import bs4
@@ -23,8 +22,7 @@ class Report(commands.Cog):
 
     @commands.command(pass_context=True)
     @commands.is_owner()
-    @covid.command()
-    async def reset(self, ctx: commands.Context):
+    async def covidreset(self, ctx: commands.Context):
         self.foundToday = False
         self.firstRun = False
         self.today = None
@@ -36,8 +34,7 @@ class Report(commands.Cog):
     @commands.command(pass_context=True)
     @commands.guild_only()
     @commands.is_owner()
-    @covid.command()
-    async def start(self, ctx: commands.Context):
+    async def covidstart(self, ctx: commands.Context):
         if (self.task):
             await ctx.send("Already started")
             return
