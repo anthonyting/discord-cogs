@@ -75,6 +75,7 @@ class Report(commands.Cog):
                 timeUntilNextCheck: float = (noon - now).total_seconds()
                 self.foundToday = False
             if (not self.firstRun):
+                print(f"Checking again in: {timeUntilNextCheck} seconds")
                 await asyncio.sleep(timeUntilNextCheck)
             self.firstRun = False
             with urlopen('https://news.gov.bc.ca/ministries/health') as directoryUrl:
