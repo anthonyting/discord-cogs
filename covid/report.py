@@ -1,3 +1,5 @@
+from asyncio.tasks import Task
+from .covid import covid
 from redbot.core import commands
 import discord
 import bs4
@@ -17,18 +19,33 @@ class Report(commands.Cog):
         self.today = None
         self.foundToday = False
         self.firstRun = True
+        self.task: Task = None
+
+    @commands.command(pass_context=True)
+    @commands.is_owner()
+    @covid.command()
+    async def reset(self, ctx: commands.Context):
+        self.foundToday = False
+        self.firstRun = False
+        self.today = None
+        self.running = False
+        if (self.task):
+            self.task.cancel()
+        await ctx.send("Reset reporting success")
 
     @commands.command(pass_context=True)
     @commands.guild_only()
     @commands.is_owner()
-    async def report(self, ctx: commands.Context):
-        if (self.running):
-            await ctx.send("Already reporting")
+    @covid.command()
+    async def start(self, ctx: commands.Context):
+        if (self.task):
+            await ctx.send("Already started")
             return
 
-        self.running = True
+        await ctx.send("Starting task in this channel")
+        self.task = asyncio.create_task(self.run(ctx))
 
-        await ctx.send("Reporting in this channel")
+    async def run(self, ctx: commands.Context):
         while(not self.foundToday):
             if (not self.firstRun):
                 await asyncio.sleep(3600.0)
@@ -74,7 +91,8 @@ class Report(commands.Cog):
                                                 pyteaser.Summarize(statement.getText(), text)),
                                             colour=discord.Colour.blue()
                                         )
-                                        embed.set_author(name=f"Source", url=statement['href'], icon_url=r'https://cdn.discordapp.com/attachments/360564259316301836/747043112043544617/BCGov_-_Horizontal_AGOL_Logo_-_White_-_Sun.png')
+                                        embed.set_author(
+                                            name=f"Source", url=statement['href'], icon_url=r'https://cdn.discordapp.com/attachments/360564259316301836/747043112043544617/BCGov_-_Horizontal_AGOL_Logo_-_White_-_Sun.png')
 
                                         await ctx.send(embed=embed)
                                         continue
