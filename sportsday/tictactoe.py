@@ -11,6 +11,8 @@ class TicTacToe(commands.Cog):
     def __init__(self):
         self.options = (('1'), ('2'), ('3'), ('4'),
                         ('5'), ('6'), ('7'), ('8'), ('9'))
+        self.extraMessage = None
+        self.gameMessage = None
         self.resetGame()
 
     @commands.group(autohelp=True)
@@ -118,8 +120,12 @@ class TicTacToe(commands.Cog):
             if (i in [2, 5]):
                 output += "\n"
 
-        await ctx.send(extraText)
-        await ctx.send(output)
+        if (self.extraMessage and self.contentMessage):
+            await self.extraMessage.edit(content=extraText)
+            await self.contentMessage.edit(content=output)
+        else:
+            self.extraMessage = await ctx.send(extraText)
+            self.contentMessage = await ctx.send(output)
 
 
     async def getInput(self, ctx: commands.Context, turn):
@@ -146,6 +152,8 @@ class TicTacToe(commands.Cog):
         self.board = [0 for _ in range(9)]
         self.channel = None
         self.wager = 0
+        self.gameMessage = None
+        self.extraMessage = None
 
     def checkWin(self):
         for i in range(0, 9, 3):
