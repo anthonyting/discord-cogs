@@ -69,11 +69,11 @@ class Report(commands.Cog):
                     noonTomorrow: datetime = noon + timedelta(days=1)
                     timeUntilNextCheck: float = (
                         noonTomorrow - now).total_seconds()
-                else: # otherwise check every 15 minutes
+                    self.foundToday = False  # since next check is tomorrow, next today is false
+                else:  # otherwise check every 15 minutes
                     timeUntilNextCheck: float = 750  # 15 minutes
             else:
                 timeUntilNextCheck: float = (noon - now).total_seconds()
-                self.foundToday = False
             if (not self.firstRun):
                 print(f"Checking again in: {timeUntilNextCheck} seconds")
                 await asyncio.sleep(timeUntilNextCheck)
