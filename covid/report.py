@@ -67,13 +67,13 @@ class Report(commands.Cog):
                 if (self.foundToday or now > night):
                     # wait for tomorrow if we have today or if it's too late
                     nextCheck: datetime = noon + timedelta(days=1)
-                    # delay weekend checks by a day (saturday won't check, sunday will)
-                    if (nextCheck.date().weekday() in [6, 7]):
-                        nextCheck = noon + timedelta(days=1)
                     timeUntilNextCheck: float = (
                         nextCheck - now).total_seconds()
                     self.foundToday = False  # since next check is tomorrow, next today is false
-                else:  # otherwise check every 15 minutes
+                elif (noon.date().weekday() in [6, 7]):
+                    # delay weekend checks by a day (saturday won't check, sunday will)
+                    timeUntilNextCheck = noon + timedelta(days=1)
+                else:
                     timeUntilNextCheck: float = 750  # 15 minutes
             else:
                 timeUntilNextCheck: float = (noon - now).total_seconds()
