@@ -8,6 +8,7 @@ from bs4.element import PageElement, Tag
 import pyteaser
 from datetime import datetime, timedelta
 import asyncio
+import traceback
 
 
 class Report(commands.Cog):
@@ -59,20 +60,14 @@ class Report(commands.Cog):
             # temporarily wait to prevent untested infinite loops
             await asyncio.sleep(10)
             now: datetime = datetime.now()
-            noon: datetime = now.replace(
-                hour=12, minute=0, second=0, microsecond=0)
-            night: datetime = now.replace(
-                hour=22, minute=0, second=0, microsecond=0)
+            noon: datetime = now.replace(hour=12, minute=0, second=0, microsecond=0)
+            night: datetime = now.replace(hour=22, minute=0, second=0, microsecond=0)
             if (now > noon):
-                if (self.foundToday or now > night):
+                if (self.foundToday or now > night or noon.date().weekday() in [6, 7]):
                     # wait for tomorrow if we have today or if it's too late
                     nextCheck: datetime = noon + timedelta(days=1)
-                    timeUntilNextCheck: float = (
-                        nextCheck - now).total_seconds()
+                    timeUntilNextCheck: float = (nextCheck - now).total_seconds()
                     self.foundToday = False  # since next check is tomorrow, next today is false
-                elif (noon.date().weekday() in [6, 7]):
-                    # delay weekend checks by a day (saturday won't check, sunday will)
-                    timeUntilNextCheck = noon + timedelta(days=1)
                 else:
                     timeUntilNextCheck: float = 750  # 15 minutes
             else:
