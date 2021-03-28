@@ -86,8 +86,8 @@ class Covid(commands.Cog):
             newCasesToday = attr['NewCases']
             activeCasesToday = attr['ActiveCases']
             region = attr['HA_Name']
-            totalNew += newCasesToday
-            totalActive += activeCasesToday
+            totalNew += int(newCasesToday or 0)
+            totalActive += int(activeCasesToday or 0)
             date = max(date, int(attr['Date_Updat']))
 
             regions.append(region)
