@@ -74,7 +74,6 @@ class Covid(commands.Cog):
 
         embed = discord.Embed(
             title="BC COVID-19 Case Numbers",
-            description="Most recent BC COVID-19 data.",
             colour=discord.Colour.blue()
         )
 
@@ -92,7 +91,6 @@ class Covid(commands.Cog):
             totalActive += int(activeCasesToday or 0)
             date = max(date, int(attr['Date_Updat']))
 
-            regions.append(region)
             newCases.append(newCasesToday)
             activeCases.append(activeCasesToday)
 
@@ -100,16 +98,18 @@ class Covid(commands.Cog):
                 regionString += f"**{region}**"
                 newCasesString += f"**{newCasesToday}**"
                 activeCasesString += f"**{activeCasesToday}**"
+                regions.append(f"* {region}")
             else:
                 regionString += region
                 newCasesString += str(newCasesToday)
                 activeCasesString += str(activeCasesToday)
+                regions.append(region)
             regionString += '\n'
             newCasesString += '\n'
             activeCasesString += '\n'
 
 
-        regions.append('Total')
+        regions.append('# Total')
         newCases.append(totalNew)
         activeCases.append(totalActive)
 
@@ -122,8 +122,8 @@ class Covid(commands.Cog):
         table.align = 'l'
         table.left_padding_width = 0
 
-        embed.add_field(name=f"Updated: {dateString}", value=f"```md\n{table.get_string()}```", inline=True)
+        embed.add_field(name=f"Last updated on {dateString}", value=f"```md\n{table.get_string()}```", inline=True)
         embed.set_author(name=f"Source", url=r"https://experience.arcgis.com/experience/a6f23959a8b14bfa989e3cda29297ded", icon_url=r"https://cdn.discordapp.com/attachments/360564259316301836/747043112043544617/BCGov_-_Horizontal_AGOL_Logo_-_White_-_Sun.png")
-        embed.set_footer(text="Updated daily Monday through Friday at 5:00 pm")
+        embed.set_footer(text="Updates daily Monday through Friday at 5:00 pm")
         # API: https://services1.arcgis.com/xeMpV7tU1t4KD3Ei/ArcGIS/rest/services/COVID19_Cases_by_BC_Health_Authority/FeatureServer/0
         return embed
