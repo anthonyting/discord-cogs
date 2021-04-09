@@ -109,9 +109,9 @@ class Covid(commands.Cog):
             activeCasesString += '\n'
 
 
-        regions.push('Total')
-        newCases.push(totalNew)
-        activeCases.push(totalActive)
+        regions.append('Total')
+        newCases.append(totalNew)
+        activeCases.append(totalActive)
 
         newCasesString += f"**{totalNew}**"
         activeCasesString += f"**{totalActive}**"
