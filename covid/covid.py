@@ -1,3 +1,4 @@
+from prettytable.prettytable import HEADER, NONE
 from redbot.core import commands
 import discord
 from urllib.parse import urlencode
@@ -7,6 +8,7 @@ import json
 import traceback
 
 from datetime import datetime, timedelta
+from prettytable import PrettyTable
 
 
 class Covid(commands.Cog):
@@ -68,11 +70,11 @@ class Covid(commands.Cog):
             activeCasesString += str(activeCasesToday) + '\n'
 
         dateString = datetime.fromtimestamp(
-            date // 1000).strftime("%Y/%m/%d %I:%M%p")
+            date // 1000).strftime("%B %#d at %#I:%M%p")
 
         embed = discord.Embed(
             title="BC COVID-19 Case Numbers",
-            description="Most recent BC COVID-19 data. Last Updated: " + dateString,
+            description="Most recent BC COVID-19 data.",
             colour=discord.Colour.blue()
         )
 
@@ -109,9 +111,13 @@ class Covid(commands.Cog):
         newCasesString += f"**{totalNew}**"
         activeCasesString += f"**{totalActive}**"
 
-        embed.add_field(name="Region", value=regionString, inline=True)
-        embed.add_field(name="New Cases (24h)", value=newCasesString, inline=True)
-        embed.add_field(name="Active Cases", value=activeCasesString, inline=True)
+        table = PrettyTable(field_names=["# Region", "New Cases (24h)", "Active"])
+        table.add_rows(zip(regions, newCases, activeCases))
+        table.border = False
+        table.align = 'l'
+        table.left_padding_width = 0
+
+        embed.add_field(name=f"Updated: {dateString}", value=f"```md\n{table.get_string()}```", inline=True)
         embed.set_author(name=f"Source", url=r"https://experience.arcgis.com/experience/a6f23959a8b14bfa989e3cda29297ded", icon_url=r"https://cdn.discordapp.com/attachments/360564259316301836/747043112043544617/BCGov_-_Horizontal_AGOL_Logo_-_White_-_Sun.png")
         embed.set_footer(text="Updated daily Monday through Friday at 5:00 pm")
         # API: https://services1.arcgis.com/xeMpV7tU1t4KD3Ei/ArcGIS/rest/services/COVID19_Cases_by_BC_Health_Authority/FeatureServer/0
