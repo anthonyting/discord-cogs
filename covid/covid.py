@@ -108,6 +108,11 @@ class Covid(commands.Cog):
             newCasesString += '\n'
             activeCasesString += '\n'
 
+
+        regions.push('Total')
+        newCases.push(totalNew)
+        activeCases.push(totalActive)
+
         newCasesString += f"**{totalNew}**"
         activeCasesString += f"**{totalActive}**"
 
