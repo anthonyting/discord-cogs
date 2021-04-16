@@ -69,8 +69,17 @@ class Covid(commands.Cog):
             newCasesString += str(newCasesToday) + '\n'
             activeCasesString += str(activeCasesToday) + '\n'
 
-        dateString = datetime.fromtimestamp(
-            date // 1000).strftime("%B %#d at %#I:%M%p")
+        updatedAt = datetime.fromtimestamp(date // 1000)
+
+        dateString = updatedAt.strftime("%B %#d at %#I:%M%p")
+        daysSince = (datetime.now() - updatedAt).days
+
+        if (daysSince == 1):
+            dateDiff = "Yesterday"
+        elif (daysSince > 1):
+            dateDiff = f"{(datetime.now() - updatedAt).days} days ago"
+        else:
+            dateDiff = "Today"
 
         embed = discord.Embed(
             title="BC COVID-19 Case Numbers",
@@ -108,7 +117,6 @@ class Covid(commands.Cog):
             newCasesString += '\n'
             activeCasesString += '\n'
 
-
         regions.append('# Total')
         newCases.append(totalNew)
         activeCases.append(totalActive)
@@ -116,14 +124,17 @@ class Covid(commands.Cog):
         newCasesString += f"**{totalNew}**"
         activeCasesString += f"**{totalActive}**"
 
-        table = PrettyTable(field_names=["# Region", "New Cases (24h)", "Active"])
+        table = PrettyTable(
+            field_names=["# Region", "New Cases (24h)", "Active"])
         table.add_rows(zip(regions, newCases, activeCases))
         table.border = False
         table.align = 'l'
         table.left_padding_width = 0
 
-        embed.add_field(name=f"Last updated on {dateString}", value=f"```md\n{table.get_string()}```", inline=True)
-        embed.set_author(name=f"Source", url=r"https://experience.arcgis.com/experience/a6f23959a8b14bfa989e3cda29297ded", icon_url=r"https://cdn.discordapp.com/attachments/360564259316301836/747043112043544617/BCGov_-_Horizontal_AGOL_Logo_-_White_-_Sun.png")
+        embed.add_field(name=f"Last updated on {dateString} ({dateDiff})",
+                        value=f"```md\n{table.get_string()}```", inline=True)
+        embed.set_author(name=f"Source", url=r"https://experience.arcgis.com/experience/a6f23959a8b14bfa989e3cda29297ded",
+                         icon_url=r"https://cdn.discordapp.com/attachments/360564259316301836/747043112043544617/BCGov_-_Horizontal_AGOL_Logo_-_White_-_Sun.png")
         embed.set_footer(text="Updates daily Monday through Friday at 5:00 pm")
         # API: https://services1.arcgis.com/xeMpV7tU1t4KD3Ei/ArcGIS/rest/services/COVID19_Cases_by_BC_Health_Authority/FeatureServer/0
         return embed
