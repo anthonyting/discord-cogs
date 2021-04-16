@@ -72,7 +72,7 @@ class Covid(commands.Cog):
         updatedAt = datetime.fromtimestamp(date // 1000)
 
         dateString = updatedAt.strftime("%B %#d at %#I:%M%p")
-        daysSince = (datetime.now() - updatedAt).days
+        daysSince = (datetime.now().replace(hour=0,minute=0,second=0,microsecond=0) - updatedAt.replace(hour=0,minute=0,second=0,microsecond=0)).days
 
         if (daysSince == 1):
             dateDiff = "Yesterday"
