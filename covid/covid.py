@@ -30,7 +30,7 @@ class Covid(commands.Cog):
         queries = {
             "where": "1=1",
             "time": f"\'{datetime.now().strftime('%m/%d/%Y')}\'",
-            "outFields": "HA_Name, NewCases, Date_Updat, ActiveCases",
+            "outFields": "HA_Name, NewCases, Date_Updat, ActiveCases, CurrentlyICU",
             "returnGeometry": "false",
             "returnCentroid": "false",
             "f": "json"
@@ -55,14 +55,17 @@ class Covid(commands.Cog):
     async def parseData(self, data):
         totalNew = 0
         totalActive = 0
+        totalICU = 0
         date = 0
         regionString, newCasesString, activeCasesString = ("", "", "")
         for element in data['features']:
             attr = element['attributes']
             newCasesToday = attr['NewCases']
             activeCasesToday = attr['ActiveCases']
+            icuToday = attr['CurrentlyICU']
             totalNew += int(newCasesToday or 0)
             totalActive += int(activeCasesToday or 0)
+            totalICU += int(icuToday or 0)
             date = max(date, int(attr['Date_Updat']))
 
             regionString += attr['HA_Name'] + '\n'
@@ -88,20 +91,24 @@ class Covid(commands.Cog):
 
         totalNew = 0
         totalActive = 0
+        totalICU = 0
         date = 0
         regionString, newCasesString, activeCasesString = ("", "", "")
-        regions, newCases, activeCases = ([], [], [])
+        regions, newCases, activeCases, icuCases = ([], [], [], [])
         for element in data['features']:
             attr = element['attributes']
             newCasesToday = attr['NewCases']
             activeCasesToday = attr['ActiveCases']
+            icuToday = attr['CurrentlyICU']
             region = attr['HA_Name']
             totalNew += int(newCasesToday or 0)
             totalActive += int(activeCasesToday or 0)
+            totalICU += int(icuToday or 0)
             date = max(date, int(attr['Date_Updat']))
 
             newCases.append(newCasesToday)
             activeCases.append(activeCasesToday)
+            icuCases.append(icuToday)
 
             if (region == 'Vancouver Coastal'):
                 regionString += f"**{region}**"
@@ -120,13 +127,14 @@ class Covid(commands.Cog):
         regions.append('# Total')
         newCases.append(totalNew)
         activeCases.append(totalActive)
+        icuCases.append(totalICU)
 
         newCasesString += f"**{totalNew}**"
         activeCasesString += f"**{totalActive}**"
 
         table = PrettyTable(
-            field_names=["# Region", "New Cases (24h)", "Active"])
-        table.add_rows(zip(regions, newCases, activeCases))
+            field_names=["# Region", "New Cases", "Active", "ICU"])
+        table.add_rows(zip(regions, newCases, activeCases, icuCases))
         table.border = False
         table.align = 'l'
         table.left_padding_width = 0
