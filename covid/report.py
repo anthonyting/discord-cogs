@@ -35,7 +35,7 @@ class Report(commands.Cog):
 
     @commands.command(pass_context=True)
     @commands.is_owner()
-    async def covidreset(self, ctx: commands.Context = None):
+    async def covidreset(self, ctx: commands.Context):
         if (not self.task):
             await ctx.send("Task not started")
 
@@ -69,17 +69,18 @@ class Report(commands.Cog):
                 hour=12, minute=0, second=0, microsecond=0)
             night: datetime = now.replace(
                 hour=22, minute=0, second=0, microsecond=0)
+            timeUntilNextCheck: float
             if (now > noon):
                 if (self.foundToday or now > night or noon.date().weekday() in [6, 7]):
                     # wait for tomorrow if we have today or if it's too late
                     nextCheck: datetime = noon + timedelta(days=1)
-                    timeUntilNextCheck: float = (
+                    timeUntilNextCheck = (
                         nextCheck - now).total_seconds()
                     self.foundToday = False  # since next check is tomorrow, next today is false
                 else:
-                    timeUntilNextCheck: float = 750  # 15 minutes
+                    timeUntilNextCheck = 750  # 15 minutes
             else:
-                timeUntilNextCheck: float = (noon - now).total_seconds()
+                timeUntilNextCheck = (noon - now).total_seconds()
             if (not self.firstRun):
                 print(f"Checking again in: {timeUntilNextCheck} seconds")
                 await asyncio.sleep(timeUntilNextCheck)
@@ -94,7 +95,7 @@ class Report(commands.Cog):
                 statement: PageElement = None
                 for date in dates:
                     located: PageElement = date.parent.parent.find(
-                        name='a', href=True, text=re.compile(f"Joint statement.*COVID-19.*"))
+                        name='a', href=True, text=re.compile(f".*COVID-19.*update"))
                     if (located):
                         statement = located
                         break
@@ -107,7 +108,7 @@ class Report(commands.Cog):
                             selector=".story-expander article")
                         if (textElement):
                             text: str = textElement.getText()
-                            intro: str = "Dr. Bonnie Henry, B.C.’s provincial health officer, and Adrian Dix, Minister of Health, have issued the following joint statement regarding updates on the novel coronavirus (COVID-19) response in British Columbia:"
+                            intro: str = ""
                             concatenateStart: int = text.find(intro)
                             if (concatenateStart > -1):
                                 concatenateStart += len(intro)
@@ -119,9 +120,9 @@ class Report(commands.Cog):
                                         re.compile('“'), ' ', text)).strip()
                                     self.foundToday = True
                                     embed = discord.Embed(
-                                        title="BC COVID-19 Joint Statement",
+                                        title="BC COVID-19 Pandemic Update",
                                         description=" ".join(
-                                            pyteaser.Summarize(statement.getText(), text)),
+                                            pyteaser.Summarize(text)),
                                         colour=discord.Colour.blue()
                                     )
                                     embed.set_author(
