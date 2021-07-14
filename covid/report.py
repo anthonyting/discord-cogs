@@ -101,10 +101,10 @@ class Report(commands.Cog):
                         break
 
                 if (statement and statement['href']):
-                    with urlopen(statement['href']) as jointStatementUrl:
-                        jointStatement = bs4.BeautifulSoup(
-                            jointStatementUrl, features="html.parser")
-                        textElement: Tag = jointStatement.select_one(
+                    with urlopen(statement['href']) as infoUrl:
+                        info = bs4.BeautifulSoup(
+                            infoUrl, features="html.parser")
+                        textElement: Tag = info.select_one(
                             selector=".story-expander article")
                         if (textElement):
                             text: str = textElement.getText()
@@ -115,14 +115,11 @@ class Report(commands.Cog):
                                 concatenateEnd: int = text.rfind(
                                     "Learn More:")
                                 if (concatenateStart > -1 and concatenateEnd > -1):
-                                    text = text[concatenateStart:concatenateEnd]
-                                    text = re.sub(re.compile('”'), '', re.sub(
-                                        re.compile('“'), ' ', text)).strip()
+                                    text = text[concatenateStart:concatenateEnd].strip()
                                     self.foundToday = True
                                     embed = discord.Embed(
                                         title="BC COVID-19 Pandemic Update",
-                                        description=" ".join(
-                                            pyteaser.Summarize(text)),
+                                        description=text,
                                         colour=discord.Colour.blue()
                                     )
                                     embed.set_author(
