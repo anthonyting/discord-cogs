@@ -80,7 +80,7 @@ class Covid(commands.Cog):
         if (daysSince == 1):
             dateDiff = "Yesterday"
         elif (daysSince > 1):
-            dateDiff = f"{(datetime.now() - updatedAt).days} days ago"
+            dateDiff = f"{daysSince} days ago"
         else:
             dateDiff = "Today"
 
