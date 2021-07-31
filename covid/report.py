@@ -5,6 +5,7 @@ import bs4
 from urllib.request import urlopen
 import re
 from bs4.element import PageElement, Tag
+from markdownify import markdownify as md
 from datetime import datetime, timedelta
 import asyncio
 import traceback
@@ -101,29 +102,64 @@ class Report(commands.Cog):
                         break
 
                 if (statement and statement['href']):
+                    nums = {
+                        "no": 0,
+                        "zero": 0,
+                        "one": 1,
+                        "two": 2,
+                        "three": 3,
+                        "four": 4,
+                        "five": 5,
+                        "six": 6,
+                        "seven": 7,
+                        "eight": 8,
+                        "nine": 9
+                    }
                     with urlopen(statement['href']) as infoUrl:
                         info = bs4.BeautifulSoup(
                             infoUrl, features="html.parser")
-                        textElement: Tag = info.select_one(
-                            selector=".story-expander article")
-                        if (textElement):
-                            text: str = textElement.getText()
-                            intro: str = ""
-                            concatenateStart: int = text.find(intro)
-                            if (concatenateStart > -1):
-                                concatenateStart += len(intro)
-                                concatenateEnd: int = text.rfind(
-                                    "Learn More:")
-                                if (concatenateStart > -1 and concatenateEnd > -1):
-                                    text = text[concatenateStart:concatenateEnd].strip()
-                                    self.foundToday = True
-                                    embed = discord.Embed(
-                                        title="BC COVID-19 Pandemic Update",
-                                        description=text,
-                                        colour=discord.Colour.blue()
-                                    )
-                                    embed.set_author(
-                                        name=f"Source", url=statement['href'], icon_url=r'https://cdn.discordapp.com/attachments/360564259316301836/747043112043544617/BCGov_-_Horizontal_AGOL_Logo_-_White_-_Sun.png')
+                        textElement: Tag = info.select(
+                            selector=".story-expander > article > *")
 
-                                    self.count = 0
-                                    await ctx.send(embed=embed)
+                        if (textElement):
+                            elms1: Tag = info.new_tag('div')
+                            elms2: Tag = info.new_tag('div')
+                            ul: Tag = None
+                            for elm in textElement:
+                                if (elm.name == 'ul'):
+                                    if (ul is None):
+                                        ul = elm
+                                    else:
+                                        elms2.append(elm)
+                                else:
+                                    if (ul is None):
+                                        elms1.append(elm)
+                                        pass
+                                    else:
+                                        elms2.append(elm)
+                            caseCount = 0
+                            for elm in ul.find_all('li', recursive=False):
+                                cases = next(elm.stripped_strings)
+                                split = cases.split(' ')
+                                if (len(split)):
+                                    try:
+                                        caseCount += int(split[0])
+                                    except ValueError:
+                                        caseCount += nums.get(split[0]) or 0
+                            caseCountSection = f"```md\n{md(str(ul))}\nTotal new: {caseCount}```\n"
+                            text: str = f"{md(str(elms1))}{caseCountSection}{md(str(elms2))}"
+                            concatenateEnd: int = text.rfind(
+                                "**Learn More:")
+                            if (concatenateEnd > -1):
+                                text = text[:concatenateEnd].strip()
+                                self.foundToday = True
+                                embed = discord.Embed(
+                                    title="BC COVID-19 Pandemic Update",
+                                    description=caseCountSection,
+                                    colour=discord.Colour.blue()
+                                )
+                                embed.set_author(
+                                    name=f"Source", url=statement['href'], icon_url=r'https://cdn.discordapp.com/attachments/360564259316301836/747043112043544617/BCGov_-_Horizontal_AGOL_Logo_-_White_-_Sun.png')
+
+                                self.count = 0
+                                await ctx.send(embed=embed)
