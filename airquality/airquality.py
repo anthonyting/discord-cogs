@@ -4,13 +4,16 @@ import discord
 from dotenv import load_dotenv
 load_dotenv()
 from urllib.request import urlopen
-import urllib.error
+import urllib.error, urllib.parse
 import json
 import traceback
 from datetime import datetime, timezone
 import dateutil.parser
 
 API_KEY = os.getenv('IQR_API_KEY')
+CITY = os.getenv('CITY')
+COUNTRY = os.getenv('COUNTRY')
+STATE = os.getenv('STATE')
 
 class AirQuality(commands.Cog):
     """Get air quality"""
@@ -20,7 +23,14 @@ class AirQuality(commands.Cog):
     async def air(self, ctx):
         """Get air quality"""
 
-        url = f"https://api.airvisual.com/v2/nearest_city?key={API_KEY}"
+        args = {
+            "city": CITY,
+            "country": COUNTRY,
+            "state": STATE,
+            "key": API_KEY
+        }
+
+        url = f"https://api.airvisual.com/v2/city?{urllib.parse.urlencode(args)}"
 
         await ctx.trigger_typing()
 
