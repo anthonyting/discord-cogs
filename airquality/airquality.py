@@ -23,12 +23,14 @@ class AirQuality(commands.Cog):
     @commands.command(pass_context=True)
     @commands.guild_only()
     async def airquality(self, ctx):
-        self.air(ctx)
+        """Get air quality"""
+        await self.air(ctx)
 
     @commands.command(pass_context=True)
     @commands.guild_only()
     async def aqi(self, ctx):
-        self.air(ctx)
+        """Get air quality"""
+        await self.air(ctx)
 
     @commands.command(pass_context=True)
     @commands.guild_only()
