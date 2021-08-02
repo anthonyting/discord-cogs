@@ -28,12 +28,18 @@ class AQHI(commands.Cog):
                 print(self.ftp.login())
                 self.ftp.cwd('pub/outgoing/AIR/Hourly_Raw_Air_Data/Station/')
 
+    def teardown(self):
+        self.ftp.close()
+
     @commands.command(pass_context=True)
     @commands.guild_only()
     async def aqhi(self, ctx):
         """Get BC AQHI"""
+
+        await ctx.trigger_typing()
+
         MINIMUM_CACHE_TIME = datetime.timedelta(minutes=5)
-        if (self.cache and self.cache_time - datetime.datetime.now() < MINIMUM_CACHE_TIME):
+        if (self.cache and datetime.datetime.now() - self.cache_time < MINIMUM_CACHE_TIME):
             await ctx.send(embed=self.cache)
             return
 
