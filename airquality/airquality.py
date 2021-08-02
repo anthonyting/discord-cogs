@@ -8,8 +8,6 @@ from urllib.request import urlopen
 from redbot.core import commands
 import os
 import discord
-from dotenv import load_dotenv
-load_dotenv()
 
 API_KEY = os.getenv('IQR_API_KEY')
 CITY = os.getenv('CITY')
@@ -68,27 +66,35 @@ class AirQuality(commands.Cog):
                     tzinfo=timezone.utc).astimezone(tz=None).strftime("%Y/%m/%d %#I:%M%p")
 
                 color: discord.Colour
-
+                risk: str
                 if (0 <= aqi <= 33):
                     color = discord.Colour.green()
+                    risk = "Very Good"
                 elif (34 <= aqi <= 66):
                     color = discord.Colour.dark_green()
+                    risk = "Good"
                 elif (67 <= aqi <= 99):
                     color = discord.Colour.dark_gold()
+                    risk = "Fair"
                 elif (100 <= aqi <= 149):
                     color = discord.Colour.dark_orange()
+                    risk = "Poor"
                 elif (150 <= aqi <= 200):
                     color = discord.Colour.dark_red()
+                    risk = "Very Poor"
                 elif (201 <= aqi <= 300):
                     color = discord.Colour.purple()
+                    risk = "Hazardous"
                 else:
                     color = discord.Colour.dark_purple()
+                    risk = "Very Hazardous"
 
                 embed = discord.Embed(
                     title=f'AQI of **{aqi}** in {location}',
                     color=color
                 )
                 embed.set_author(name=f"Updated at {formattedTime}", url=f"https://www.iqair.com/{COUNTRY.lower()}/{STATE.lower().replace(' ', '-')}/{CITY.lower()}")
+                embed.set_footer(text=risk)
 
                 await ctx.send(embed=embed)
         except urllib.error.HTTPError as e:
