@@ -97,7 +97,7 @@ class AQHI(commands.Cog):
         formattedTime = latest['DATE_PST'].strftime("%Y/%m/%d %#I:%M%p")
 
         embed = discord.Embed(
-            title=f"AQHI of **{latest['AQHI_CHAR']}** in {latest['AQHI_AREA']} ({risk})",
+            title=f"AQHI of {latest['AQHI_CHAR']} ({risk}) in {latest['AQHI_AREA']}",
             color=color
         )
         embed.set_author(name=f"Updated at {formattedTime}",
