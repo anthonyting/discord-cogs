@@ -90,11 +90,10 @@ class AirQuality(commands.Cog):
                     risk = "Very Hazardous"
 
                 embed = discord.Embed(
-                    title=f'AQI of **{aqi}** in {location}',
+                    title=f'AQI of **{aqi}** in {location} ({risk})',
                     color=color
                 )
                 embed.set_author(name=f"Updated at {formattedTime}", url=f"https://www.iqair.com/{COUNTRY.lower()}/{STATE.lower().replace(' ', '-')}/{CITY.lower()}")
-                embed.set_footer(text=risk)
 
                 await ctx.send(embed=embed)
         except urllib.error.HTTPError as e:

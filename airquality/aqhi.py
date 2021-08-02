@@ -18,11 +18,15 @@ class AQHI(commands.Cog):
         self.cache_time = None
 
     def connect(self):
-        try:
-            self.ftp.voidcmd('NOOP')
-        except IOError as e:
-            self.ftp.login()
+        if (self.cache is None):
+            print(self.ftp.login())
             self.ftp.cwd('pub/outgoing/AIR/Hourly_Raw_Air_Data/Station/')
+        else:
+            try:
+                self.ftp.voidcmd('NOOP')
+            except:
+                print(self.ftp.login())
+                self.ftp.cwd('pub/outgoing/AIR/Hourly_Raw_Air_Data/Station/')
 
     @commands.command(pass_context=True)
     @commands.guild_only()
@@ -35,8 +39,8 @@ class AQHI(commands.Cog):
 
         self.connect()
         lines = []
-        self.ftp.retrlines(f'RETR AQHI-{AQHI_REGION}.csv',
-                           callback=lambda x: lines.append(str(x)))
+        print(self.ftp.retrlines(f'RETR AQHI-{AQHI_REGION}.csv',
+                                 callback=lambda x: lines.append(str(x))))
 
         output: List[Dict] = []
         reader = csv.DictReader(lines)
@@ -52,7 +56,7 @@ class AQHI(commands.Cog):
             datetime.date, x['DATE_PST']))
         latest = sortedOutput[-1]
 
-        aqhi_char = latest['aqhi_char']
+        aqhi_char = latest['AQHI_CHAR']
 
         color: discord.Colour
         risk: str
@@ -93,12 +97,11 @@ class AQHI(commands.Cog):
         formattedTime = latest['DATE_PST'].strftime("%Y/%m/%d %#I:%M%p")
 
         embed = discord.Embed(
-            title=f"AQHI of **{latest['AQHI_CHAR']}** in {latest['AQHI_AREA']}",
+            title=f"AQHI of **{latest['AQHI_CHAR']}** in {latest['AQHI_AREA']} ({risk})",
             color=color
         )
         embed.set_author(name=f"Updated at {formattedTime}",
                          url="https://www.env.gov.bc.ca/epd/bcairquality/data/aqhi-table.html")
-        embed.set_footer(text=risk)
         self.cache = embed
         self.cache_time = datetime.datetime.now()
         await ctx.send(embed=embed)
