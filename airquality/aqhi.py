@@ -13,23 +13,13 @@ class AQHI(commands.Cog):
     """Get BC AQHI"""
 
     def __init__(self):
-        self.ftp = FTP('ftp.env.gov.bc.ca')
         self.cache = None
         self.cache_time = None
-
-    def connect(self):
-        if (self.cache is None):
-            print(self.ftp.login())
-            self.ftp.cwd('pub/outgoing/AIR/Hourly_Raw_Air_Data/Station/')
-        else:
-            try:
-                self.ftp.voidcmd('NOOP')
-            except:
-                print(self.ftp.login())
-                self.ftp.cwd('pub/outgoing/AIR/Hourly_Raw_Air_Data/Station/')
+        self.ftp = None
 
     def teardown(self):
-        self.ftp.close()
+        if (self.ftp):
+            self.ftp.close()
 
     @commands.command(pass_context=True)
     @commands.guild_only()
@@ -43,10 +33,17 @@ class AQHI(commands.Cog):
             await ctx.send(embed=self.cache)
             return
 
-        self.connect()
+        if (self.ftp):
+            self.ftp.close()
+        self.ftp = FTP('ftp.env.gov.bc.ca')
+        print(self.ftp.login())
+        self.ftp.cwd('pub/outgoing/AIR/Hourly_Raw_Air_Data/Station/')
+
         lines = []
         print(self.ftp.retrlines(f'RETR AQHI-{AQHI_REGION}.csv',
                                  callback=lambda x: lines.append(str(x))))
+
+        self.ftp.close()
 
         output: List[Dict] = []
         reader = csv.DictReader(lines)
