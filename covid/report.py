@@ -138,14 +138,16 @@ class Report(commands.Cog):
                                     else:
                                         elms2.append(elm)
                             caseCount = 0
-                            for elm in ul.find_all('li', recursive=False):
+                            for elm in ul.find_all('li'):
                                 cases = next(elm.stripped_strings)
                                 split = cases.split(' ')
                                 if (len(split)):
-                                    try:
-                                        caseCount += int(split[0])
-                                    except ValueError:
-                                        caseCount += nums.get(split[0]) or 0
+                                    for (i, word) in enumerate(split):
+                                        if (i + 1 < len(split) - 1 and split[i + 1] == 'new'):
+                                            try:
+                                                caseCount += int(word)
+                                            except ValueError:
+                                                caseCount += nums.get(word) or 0
                             caseCountSection = f"```md\n{md(str(ul))}\nTotal new: {caseCount}```\n"
                             text: str = f"{md(str(elms1))}{caseCountSection}{md(str(elms2))}"
                             concatenateEnd: int = text.rfind(
