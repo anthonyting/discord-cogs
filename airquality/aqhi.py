@@ -23,7 +23,19 @@ class AQHI(commands.Cog):
 
     @commands.command(pass_context=True)
     @commands.guild_only()
+    async def airquality(self, ctx):
+        """Get air quality"""
+        await self.air(ctx)
+
+    @commands.command(pass_context=True)
+    @commands.guild_only()
     async def aqhi(self, ctx):
+        """Get air quality"""
+        await self.air(ctx)       
+
+    @commands.command(pass_context=True)
+    @commands.guild_only()
+    async def air(self, ctx):
         """Get BC AQHI"""
 
         await ctx.trigger_typing()
