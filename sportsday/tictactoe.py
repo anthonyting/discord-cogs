@@ -13,6 +13,22 @@ class TicTacToe(commands.Cog):
                         ('5'), ('6'), ('7'), ('8'), ('9'))
         self.extraMessage = None
         self.gameMessage = None
+        self.playing = False
+        self.bjPlayerName = ""
+        self.bjPlayer = None
+        self.vkPlayerName = ""
+        self.vkPlayer = None
+        self.sportsdaybj = None
+        self.sportsdayvk = None
+        self.players = {}
+        self.waiting = False
+        self.filledSquares = 0
+        self.board = [0 for _ in range(9)]
+        self.channel = None
+        self.wager = 0
+        self.gameMessage = None
+        self.extraMessage = None
+        self.contentMessage = None
         self.resetGame()
 
     @commands.group(autohelp=True)
@@ -111,7 +127,6 @@ class TicTacToe(commands.Cog):
 
     async def printBoard(self, ctx: commands.Context, extraText: str = 'GAME OVER'):
         output = ""
-        counter = 0
         for i, item in enumerate(self.board):
             if item:
                 output += item
@@ -139,21 +154,7 @@ class TicTacToe(commands.Cog):
         return int(choice.content)
 
     def resetGame(self):
-        self.playing = False
-        self.bjPlayerName = ""
-        self.bjPlayer = None
-        self.vkPlayerName = ""
-        self.vkPlayer = None
-        self.sportsdaybj = None
-        self.sportsdayvk = None
-        self.players = {}
-        self.waiting = False
-        self.filledSquares = 0
-        self.board = [0 for _ in range(9)]
-        self.channel = None
-        self.wager = 0
-        self.gameMessage = None
-        self.extraMessage = None
+        self.__init__()
 
     def checkWin(self):
         for i in range(0, 9, 3):
