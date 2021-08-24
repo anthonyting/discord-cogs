@@ -1,5 +1,4 @@
 from .covid import Covid
-from .report import Report
 
 covidInstance = Covid()
 
