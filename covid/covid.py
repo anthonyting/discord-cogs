@@ -181,8 +181,8 @@ class Covid(commands.Cog):
 
         data_updated_at = datetime.fromtimestamp(date // 1000)
 
-        if self.cached_report_time and data_updated_at < self.cached_report_time:
-            return self.cached_report
+        # if self.cached_report_time and data_updated_at < self.cached_report_time:
+            # return self.cached_report
 
         dateString = data_updated_at.strftime("%B %#d at %#I:%M%p")
         daysSince = (datetime.now().replace(hour=0, minute=0, second=0, microsecond=0) -
