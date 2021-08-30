@@ -29,7 +29,6 @@ class TicTacToe(commands.Cog):
         self.gameMessage = None
         self.extraMessage = None
         self.contentMessage = None
-        self.resetGame()
 
     @commands.group(autohelp=True)
     @commands.guild_only()
