@@ -50,9 +50,9 @@ def sum_case_counts(list_elements: ResultSet):
         if (len(split)):
             for (i, word) in enumerate(split):
                 if (i + 1 < len(split) - 1 and split[i + 1 == 'new']):
-                    case_count += case_count_text_to_number(word)
+                    case_count += case_count_text_to_number(word.replace(',', ''))
                 elif (i > 1 and split[i - 1] == 'cases:'):
-                    active_case_count += case_count_text_to_number(word)
+                    active_case_count += case_count_text_to_number(word.replace(',', ''))
 
     return (active_case_count, case_count)
 
@@ -84,7 +84,7 @@ def generate_case_count_section(info: bs4.BeautifulSoup, text_element: Tag):
 
     return (
         elms1,
-        f"```md\n{summary_string}{md(str(general_case_counts))}\nTotal new: {case_count}```\nTotal active: {active_case_count}\n",
+        f"```md\n{summary_string}{md(str(general_case_counts))}\nTotal new: {case_count}\nTotal active: {active_case_count}\n```",
         elms2
     )
 
