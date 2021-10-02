@@ -81,10 +81,12 @@ def generate_case_count_section(info: bs4.BeautifulSoup, text_element: Tag):
     list_elements = general_case_counts.find_all('li')
     active_case_count, case_count = sum_case_counts(list_elements)
     summary_string = f"{md(str(summary_ul))}\n" if summary_ul else ""
+    case_count_string = f"Total new: {case_count}"
+    active_case_count_string = f"Total active: {active_case_count}" if active_case_count > case_count else ""
 
     return (
         elms1,
-        f"```md\n{summary_string}{md(str(general_case_counts))}\nTotal new: {case_count}\nTotal active: {active_case_count}\n```",
+        f"```md\n{summary_string}{md(str(general_case_counts))}\n{case_count_string}\n{active_case_count_string}\n```",
         elms2
     )
 
