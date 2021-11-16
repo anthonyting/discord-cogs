@@ -276,6 +276,7 @@ class Covid(commands.Cog):
         self.is_first_report_run = True
         self.scrape_count = 0
         self.stop_report_task()
+        await ctx.message.delete()
         print("covid report task canceled")
 
     @commands.is_owner()
@@ -285,6 +286,7 @@ class Covid(commands.Cog):
             return
 
         self.report_task = asyncio.create_task(self.run_scrape_task(ctx))
+        await ctx.message.delete()
         await self.report_task
         print(self.report_task.exception())
 
