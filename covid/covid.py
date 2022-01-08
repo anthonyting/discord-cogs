@@ -114,7 +114,7 @@ def generate_case_count_section(info: bs4.BeautifulSoup, article: Tag):
                 icu_count = nums.get(icu_count) or 0
 
             hospital_string = f"Total hospitalized: {hospital_count}\n"
-            icu_string = f"Total ICU patients: {icu_count}\n"
+            icu_string = f"Total intensive care: {icu_count}\n"
 
     return (
         elms1,
