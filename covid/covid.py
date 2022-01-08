@@ -34,12 +34,19 @@ nums = {
     "eight": 8,
     "nine": 9
 }
+possible_numbers = '|'.join(nums.keys()) + '|' + r'\d+'
 
-def case_count_text_to_number(text):
-    try:
+hospitalization_icu_re = re.compile(f'Of the active cases, ({possible_numbers}) individuals .* hospital and ({possible_numbers}) .* intensive care.')
+
+def case_count_text_to_number(text: str):
+    if (text.isdigit()):
         return int(text)
-    except ValueError:
-        return nums.get(text) or 0
+
+    as_number_text = nums.get(text)
+    if (as_number_text):
+        return as_number_text
+
+    return nums.get(re.search(possible_numbers, text).group()) or 0
 
 def sum_case_counts(list_elements: ResultSet):
     case_count = 0
@@ -57,15 +64,15 @@ def sum_case_counts(list_elements: ResultSet):
     return (active_case_count, case_count)
 
 
-def generate_case_count_section(info: bs4.BeautifulSoup, text_element: Tag):
+def generate_case_count_section(info: bs4.BeautifulSoup, article: Tag):
     elms1: Tag = info.new_tag('div')
     elms2: Tag = info.new_tag('div')
     summary_ul: Tag = None
     general_case_counts: Tag = None
-    text_element_iter = iter(text_element)
-    for elm in text_element_iter:
+    article_iter = iter(article)
+    for elm in article_iter:
         if (not summary_ul and re.match(r"Over a .* period,", elm.getText())):
-            summary_ul = next(text_element_iter)
+            summary_ul = next(article_iter)
         else:
             if (elm.name == 'ul'):
                 if (general_case_counts is None):
@@ -84,19 +91,44 @@ def generate_case_count_section(info: bs4.BeautifulSoup, text_element: Tag):
     case_count_string = f"Total new: {case_count}"
     active_case_count_string = f"Total active: {active_case_count}" if active_case_count > case_count else ""
 
+    article_as_text = str(article)
+    hospital_info = hospitalization_icu_re.search(article_as_text)
+    hospital_string = ""
+    icu_string = ""
+    if (hospital_info):
+        hospital_count, icu_count = hospital_info.group(1, 2)
+        if (hospital_count and icu_count):
+            if (hospital_count.isdigit()):
+                hospital_count = int(hospital_count)
+            else:
+                hospital_count = nums.get(hospital_count) or 0
+
+            if (icu_count.isdigit()):
+                icu_count = int(icu_count)
+            else:
+                icu_count = nums.get(icu_count) or 0
+
+            hospital_string = f"Total hospitalized: {hospital_count}\n"
+            icu_string = f"Total ICU patients: {icu_count}\n"
+
     return (
         elms1,
-        f"```md\n{summary_string}{md(str(general_case_counts))}\n{case_count_string}\n{active_case_count_string}\n```",
+        f"```md\n{summary_string}{md(str(general_case_counts))}\n{case_count_string}\n{active_case_count_string}\n{hospital_string}{icu_string}```",
         elms2
     )
 
+class Site(NamedTuple):
+    info: bs4.BeautifulSoup
+    article: ResultSet[Tag]
+    locatedTime: Tag
+    link: str
 
-def scrape_website():
+def scrape_website(provided_date=None):
     with urlopen('https://news.gov.bc.ca/ministries/health') as directoryUrl:
         directory = bs4.BeautifulSoup(
             directoryUrl, features="html.parser")
 
-        todayString = datetime.now().strftime(r"%B %#d, %Y")
+        todayString = (provided_date or datetime.now()).strftime(r"%B %#d, %Y")
         dates = directory.find_all(
             name='span', attrs={"class": "item-date"}, text=re.compile(f"{todayString}.*"))
         statement: PageElement = None
@@ -112,11 +144,11 @@ def scrape_website():
             with urlopen(statement['href']) as infoUrl:
                 info = bs4.BeautifulSoup(
                     infoUrl, features="html.parser")
-                textElement: Tag = info.select(
+                textElement: ResultSet[Tag] = info.select(
                     selector=".story-expander > article > *")
 
                 if (textElement):
-                    return (info, textElement, located_time, str(statement['href']))
+                    return Site(info, textElement, located_time, str(statement['href']))
 
     return None
 
@@ -331,7 +363,7 @@ class Covid(commands.Cog):
 
             if (scrape_result):
                 _, case_count_section, _ = generate_case_count_section(
-                    scrape_result[0], scrape_result[1])
+                    scrape_result.info, scrape_result.article)
 
                 # text: str = f"{md(str(elms1))}{case_count_section}{md(str(elms2))}"
                 # concatenateEnd: int = text.rfind("**Learn More:")
@@ -345,9 +377,9 @@ class Covid(commands.Cog):
                 )
 
                 embed.set_author(
-                    name=f"Source", url=scrape_result[3], icon_url=r'https://cdn.discordapp.com/attachments/360564259316301836/747043112043544617/BCGov_-_Horizontal_AGOL_Logo_-_White_-_Sun.png')
+                    name=f"Source", url=scrape_result.link, icon_url=r'https://cdn.discordapp.com/attachments/360564259316301836/747043112043544617/BCGov_-_Horizontal_AGOL_Logo_-_White_-_Sun.png')
 
-                statement_updated_at = scrape_result[2].getText()
+                statement_updated_at = scrape_result.locatedTime.getText()
 
                 try:
                     self.cached_report_time = datetime.strptime(
