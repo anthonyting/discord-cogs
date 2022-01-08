@@ -120,6 +120,9 @@ def scrape_website():
 
     return None
 
+def get_case_attr(attr, param):
+    return int(attr.get(param) or 0)
+
 class Covid(commands.Cog):
     """Gets BC COVID-19 data"""
 
@@ -145,7 +148,7 @@ class Covid(commands.Cog):
         queries = {
             "where": "1=1",
             "time": f"\'{datetime.now().strftime('%m/%d/%Y')}\'",
-            "outFields": "HA_Name, NewCases, Date_Updat, ActiveCases, CurrentlyICU",
+            "outFields": "HA_Name, NewCases, Date_Updat, ActiveCases, CurrentlyICU, CurrentlyHosp",
             "returnGeometry": "false",
             "returnCentroid": "false",
             "f": "json"
@@ -211,49 +214,49 @@ class Covid(commands.Cog):
         totalNew = 0
         totalActive = 0
         totalICU = 0
+        totalHospitalizations = 0
         date = 0
-        regionString, newCasesString, activeCasesString = ("", "", "")
-        regions, newCases, activeCases, icuCases = ([], [], [], [])
+
+        regions, newCases, activeCases, icuCases, hospitalizedCases = ([], [], [], [], [])
         for element in data['features']:
             attr = element['attributes']
-            newCasesToday = attr['NewCases']
-            activeCasesToday = attr['ActiveCases']
-            icuToday = attr['CurrentlyICU']
+
+            newCasesToday = get_case_attr(attr, 'NewCases')
+            activeCasesToday = get_case_attr(attr, 'ActiveCases')
+            icuToday = get_case_attr(attr, 'CurrentlyICU')
             region = attr['HA_Name']
-            totalNew += int(newCasesToday or 0)
-            totalActive += int(activeCasesToday or 0)
-            totalICU += int(icuToday or 0)
+            hospToday = get_case_attr(attr, 'CurrentlyHosp')
+
+            totalNew += newCasesToday
+            totalActive += activeCasesToday
+            totalICU += icuToday
+            totalHospitalizations += hospToday
+
             date = max(date, int(attr['Date_Updat']))
 
             newCases.append(newCasesToday)
             activeCases.append(activeCasesToday)
             icuCases.append(icuToday)
+            hospitalizedCases.append(hospToday)
+
+            # if needed, this can be used to reduce the length of HA region names
+            regionShort = {}
+            thisRegionShort = regionShort.get(region) or region
 
             if (region == 'Vancouver Coastal'):
-                regionString += f"**{region}**"
-                newCasesString += f"**{newCasesToday}**"
-                activeCasesString += f"**{activeCasesToday}**"
-                regions.append(f"* {region}")
+                regions.append(f"* {thisRegionShort}")
             else:
-                regionString += region
-                newCasesString += str(newCasesToday)
-                activeCasesString += str(activeCasesToday)
-                regions.append(region)
-            regionString += '\n'
-            newCasesString += '\n'
-            activeCasesString += '\n'
+                regions.append(thisRegionShort)
 
         regions.append('# Total')
         newCases.append(totalNew)
         activeCases.append(totalActive)
         icuCases.append(totalICU)
-
-        newCasesString += f"**{totalNew}**"
-        activeCasesString += f"**{totalActive}**"
+        hospitalizedCases.append(totalHospitalizations)
 
         table = PrettyTable(
-            field_names=["# Region", "New Cases", "Active", "ICU"])
-        table.add_rows(zip(regions, newCases, activeCases, icuCases))
+            field_names=["# Region", "New", "Active", "ICU", "Hospital"])
+        table.add_rows(zip(regions, newCases, activeCases, icuCases, hospitalizedCases))
         table.border = False
         table.align = 'l'
         table.left_padding_width = 0
