@@ -46,7 +46,12 @@ def case_count_text_to_number(text: str):
     if (as_number_text):
         return as_number_text
 
-    return nums.get(re.search(possible_numbers, text).group()) or 0
+    searched = re.search(possible_numbers, text)
+
+    if (searched):
+        return nums.get(searched.group()) or 0
+    
+    return 0
 
 def sum_case_counts(list_elements: ResultSet):
     case_count = 0
