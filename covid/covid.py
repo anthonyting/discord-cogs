@@ -36,7 +36,7 @@ nums = {
 }
 possible_numbers = '|'.join(nums.keys()) + '|' + r'\d+'
 
-hospitalization_icu_re = re.compile(f'Of the active cases, ({possible_numbers}) individuals .* hospital and ({possible_numbers}) .* intensive care.')
+hospitalization_icu_re = re.compile(f'Of the active cases, ({possible_numbers}) .* individuals .* hospital and ({possible_numbers}) .* intensive care.')
 
 def case_count_text_to_number(text: str):
     if (text.isdigit()):
