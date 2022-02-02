@@ -34,7 +34,8 @@ nums = {
     "eight": 8,
     "nine": 9
 }
-possible_numbers = '|'.join(nums.keys()) + '|' + r'\d+'
+# from https://stackoverflow.com/a/1359152
+possible_numbers = '|'.join(nums.keys()) + '|' + r'\d{1,3}(?:[,]\d{3})*'
 
 hospitalization_icu_re = re.compile(f'Of the active cases, ({possible_numbers}) .* individuals .* hospital and ({possible_numbers}) .* intensive care.')
 
@@ -103,13 +104,15 @@ def generate_case_count_section(info: bs4.BeautifulSoup, article: Tag):
     if (hospital_info):
         hospital_count, icu_count = hospital_info.group(1, 2)
         if (hospital_count and icu_count):
-            if (hospital_count.isdigit()):
-                hospital_count = int(hospital_count)
+            hospital_count_removed_commas = hospital_count.replace(',', '')
+            if (hospital_count_removed_commas.isdigit()):
+                hospital_count = int(hospital_count_removed_commas)
             else:
                 hospital_count = nums.get(hospital_count) or 0
 
-            if (icu_count.isdigit()):
-                icu_count = int(icu_count)
+            icu_count_removed_commas = icu_count.replace(',', '')
+            if (icu_count_removed_commas.isdigit()):
+                icu_count = int(icu_count_removed_commas)
             else:
                 icu_count = nums.get(icu_count) or 0
 
