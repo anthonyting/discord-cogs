@@ -199,6 +199,7 @@ class Covid(commands.Cog):
         request = Request(url)
         with urlopen(request) as response:
             print("Requesting covid data at " + datetime.now().isoformat())
+            data = None
             try:
                 data = json.load(response)
                 self.cached_data_response = data
@@ -211,21 +212,8 @@ class Covid(commands.Cog):
                 await ctx.send(f"{ctx.message.author.mention} Sorry, there was an error getting the data.")
 
     async def parse_covid_data(self, data):
-        data_updated_at = datetime.fromtimestamp(date // 1000)
-
         # if self.cached_report_time and data_updated_at < self.cached_report_time:
             # return self.cached_report
-
-        dateString = data_updated_at.strftime("%B %#d at %#I:%M%p")
-        daysSince = (datetime.now().replace(hour=0, minute=0, second=0, microsecond=0) -
-                     data_updated_at.replace(hour=0, minute=0, second=0, microsecond=0)).days
-
-        if (daysSince == 1):
-            dateDiff = "Yesterday"
-        elif (daysSince > 1):
-            dateDiff = f"{daysSince} days ago"
-        else:
-            dateDiff = "Today"
 
         embed = discord.Embed(
             title="BC COVID-19 Case Numbers",
@@ -281,6 +269,19 @@ class Covid(commands.Cog):
         table.border = False
         table.align = 'l'
         table.left_padding_width = 0
+
+        data_updated_at = datetime.fromtimestamp(date // 1000)
+
+        dateString = data_updated_at.strftime("%B %#d at %#I:%M%p")
+        daysSince = (datetime.now().replace(hour=0, minute=0, second=0, microsecond=0) -
+                     data_updated_at.replace(hour=0, minute=0, second=0, microsecond=0)).days
+
+        if (daysSince == 1):
+            dateDiff = "Yesterday"
+        elif (daysSince > 1):
+            dateDiff = f"{daysSince} days ago"
+        else:
+            dateDiff = "Today"
 
         embed.add_field(name=f"Last updated on {dateString} ({dateDiff})",
                         value=f"```md\n{table.get_string()}```", inline=True)
