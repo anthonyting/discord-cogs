@@ -13,7 +13,8 @@ import random
 import math
 import glob
 import re
-import urllib
+import urllib.request
+import urllib.parse
 import posixpath
 
 root_dir = './CustomCogs/quarter/temp'
@@ -52,7 +53,7 @@ class Quarter(commands.Cog):
         global running, dailyLimit
 
         if (dailyLimit <= self.count):
-            await ctx.send(f"{ctx.message.author.mention} QuarterLimit was reached {self.count}/{dailyLimit}, Quarter{something.title()} not retrieved.")
+            await ctx.send(f"{ctx.message.author.mention} QuarterLimit was reached {self.count}/{dailyLimit}, Quarter{something} not retrieved.")
             return
 
         if (something and len(something) >= 150):
@@ -63,9 +64,12 @@ class Quarter(commands.Cog):
         if (someone):
             mention = someone.mention
 
+        if (not os.path.exists(root_dir)):
+            os.makedirs(root_dir)
+
         if (len(os.listdir(root_dir)) >= 100):
             files = glob.glob(root_dir)
-            for f, i in enumerate(files):
+            for i, f in enumerate(files):
                 os.remove(f)
                 if (i >= 50):
                     break
@@ -106,6 +110,8 @@ class Quarter(commands.Cog):
         async with ctx.typing():
             # create a new one every time because otherwise it's broken
 
+            caller = None
+            displayName = None
             try:
                 while (self.queue):
                     originalWord, replyTo, caller, queueType, data, error, realCtx = self.queue.pop()
@@ -166,7 +172,7 @@ class Quarter(commands.Cog):
                         leftLimit = moved * width/4
                         rightLimit = (1 + moved) * width/4
                     cropped = im.convert('RGB').crop(
-                        (leftLimit, topLimit, rightLimit, bottomLimit))
+                        tuple([int(x) for x in [leftLimit, topLimit, rightLimit, bottomLimit]]))
                     cropped.thumbnail((800, 800), Image.ANTIALIAS)
                     with io.BytesIO() as image_binary:
                         cropped.save(image_binary, 'PNG')
