@@ -42,7 +42,7 @@ class Quarter(commands.Cog):
 
     @commands.command()
     @commands.guild_only()
-    async def quarter(self, ctx, something: typing.Optional[str] = None, someone: typing.Optional[discord.Member] = None):
+    async def quarter(self, ctx, *, something: typing.Optional[str] = None):
         """
         Examples:
         - !quarter trout
@@ -59,8 +59,6 @@ class Quarter(commands.Cog):
             return
 
         mention = ctx.message.author.mention
-        if (someone):
-            mention = someone.mention
 
         if (not os.path.exists(root_dir)):
             os.makedirs(root_dir)
