@@ -1,8 +1,8 @@
+from time import time
 from redbot.core import commands
 import discord
 from .crawler import CustomBingCrawler
-from .googlecrawler import CustomGoogleCrawler, CustomGoogleParser, CustomGoogleFeeder, CustomGoogleFeederSafe
-from .downloader import CustomDownloader
+from .googlecrawler import CustomDownloader, CustomGoogleCrawler, CustomGoogleParser, CustomGoogleFeeder, CustomGoogleFeederSafe
 import os
 import io
 from PIL import Image
@@ -137,9 +137,17 @@ class Quarter(commands.Cog):
                     imagePath = os.path.join(root_dir, escapedFilename)
                     if (queueType != 'attachment'):
                         quarter = Path(imagePath)
+                        refetch = False
                         if (quarter.exists()):
                             print(f"Cached {originalWord}")
+                            last_modification_time = os.stat(quarter).st_mtime
+                            current_time = time()
+                            if (current_time - last_modification_time > 300):
+                                refetch = True
                         else:
+                            refetch = True
+
+                        if (refetch):
                             # must download with escaped name so it saves properly
                             self.crawler.crawl(
                                 keyword=escapedFilename, max_num=1)
