@@ -231,12 +231,3 @@ class CustomGoogleCrawler(GoogleImageCrawler):
         super(GoogleImageCrawler, self).crawl(
             feeder_kwargs=feeder_kwargs, downloader_kwargs=downloader_kwargs
         )
-
-
-CustomGoogleCrawler(
-    storage={"root_dir": "./temp"},
-    log_level=10000,
-    downloader_cls=CustomDownloader,
-    parser_cls=CustomGoogleParser,
-    feeder_cls=CustomGoogleFeeder,
-).crawl(keyword="quarter", max_num=2)

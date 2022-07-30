@@ -1,13 +1,11 @@
 from time import time
 from redbot.core import commands
 import discord
-from .crawler import CustomBingCrawler
 from .googlecrawler import CustomDownloader, CustomGoogleCrawler, CustomGoogleParser, CustomGoogleFeeder, CustomGoogleFeederSafe
 import os
 import io
 from PIL import Image
 from pathlib import Path
-import logging
 import typing
 import random
 import math
@@ -17,7 +15,7 @@ import urllib.request
 import urllib.parse
 import posixpath
 
-root_dir = './CustomCogs/quarter/temp'
+root_dir = './temp'
 running = False
 dailyLimit = 100
 validURL = re.compile( # https://stackoverflow.com/a/7160778
