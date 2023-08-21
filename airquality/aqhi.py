@@ -38,85 +38,84 @@ class AQHI(commands.Cog):
     async def air(self, ctx):
         """Get BC AQHI"""
 
-        await ctx.trigger_typing()
+        async with ctx.typing():
+            MINIMUM_CACHE_TIME = datetime.timedelta(minutes=5)
+            if (self.cache and datetime.datetime.now() - self.cache_time < MINIMUM_CACHE_TIME):
+                await ctx.send(embed=self.cache)
+                return
 
-        MINIMUM_CACHE_TIME = datetime.timedelta(minutes=5)
-        if (self.cache and datetime.datetime.now() - self.cache_time < MINIMUM_CACHE_TIME):
-            await ctx.send(embed=self.cache)
-            return
+            if (self.ftp):
+                self.ftp.close()
+            self.ftp = FTP('ftp.env.gov.bc.ca')
+            print(self.ftp.login())
+            self.ftp.cwd('pub/outgoing/AIR/Hourly_Raw_Air_Data/Station/')
 
-        if (self.ftp):
+            lines = []
+            print(self.ftp.retrlines(f'RETR AQHI-{AQHI_REGION}.csv',
+                                    callback=lambda x: lines.append(str(x))))
+
             self.ftp.close()
-        self.ftp = FTP('ftp.env.gov.bc.ca')
-        print(self.ftp.login())
-        self.ftp.cwd('pub/outgoing/AIR/Hourly_Raw_Air_Data/Station/')
 
-        lines = []
-        print(self.ftp.retrlines(f'RETR AQHI-{AQHI_REGION}.csv',
-                                 callback=lambda x: lines.append(str(x))))
+            output: List[Dict] = []
+            reader = csv.DictReader(lines)
+            for elm in reader:
+                date = datetime.datetime.strptime(
+                    elm['DATE_PST'], '%Y-%m-%d %H:%M')
+                output.append({
+                    **elm,
+                    "DATE_PST": date,
+                })
 
-        self.ftp.close()
+            sortedOutput = sorted(output, key=lambda x: cast(
+                datetime.date, x['DATE_PST']))
+            latest = sortedOutput[-1]
 
-        output: List[Dict] = []
-        reader = csv.DictReader(lines)
-        for elm in reader:
-            date = datetime.datetime.strptime(
-                elm['DATE_PST'], '%Y-%m-%d %H:%M')
-            output.append({
-                **elm,
-                "DATE_PST": date,
-            })
+            aqhi_char = latest['AQHI_CHAR']
 
-        sortedOutput = sorted(output, key=lambda x: cast(
-            datetime.date, x['DATE_PST']))
-        latest = sortedOutput[-1]
+            color: discord.Colour
+            risk: str
+            if (aqhi_char == '1'):
+                color = discord.Colour.from_rgb(0, 204, 255)
+                risk = 'Low'
+            elif (aqhi_char == '2'):
+                color = discord.Colour.from_rgb(0, 153, 204)
+                risk = 'Low'
+            elif (aqhi_char == '3'):
+                color = discord.Colour.from_rgb(0, 102, 153)
+                risk = 'Low'
+            elif (aqhi_char == '4'):
+                color = discord.Colour.from_rgb(255, 255, 0)
+                risk = 'Moderate'
+            elif (aqhi_char == '5'):
+                color = discord.Colour.from_rgb(255, 204, 0)
+                risk = 'Moderate'
+            elif (aqhi_char == '6'):
+                color = discord.Colour.from_rgb(255, 153, 51)
+                risk = 'Moderate'
+            elif (aqhi_char == '7'):
+                color = discord.Colour.from_rgb(255, 102, 102)
+                risk = 'High'
+            elif (aqhi_char == '8'):
+                color = discord.Colour.from_rgb(255, 0, 0)
+                risk = 'High'
+            elif (aqhi_char == '9'):
+                color = discord.Colour.from_rgb(204, 0, 0)
+                risk = 'High'
+            elif (aqhi_char == '10'):
+                color = discord.Colour.from_rgb(153, 0, 0)
+                risk = 'High'
+            else:
+                color = discord.Colour.from_rgb(102, 0, 0)
+                risk = 'Very High'
 
-        aqhi_char = latest['AQHI_CHAR']
+            formattedTime = latest['DATE_PST'].strftime("%Y/%m/%d %#I:%M%p")
 
-        color: discord.Colour
-        risk: str
-        if (aqhi_char == '1'):
-            color = discord.Colour.from_rgb(0, 204, 255)
-            risk = 'Low'
-        elif (aqhi_char == '2'):
-            color = discord.Colour.from_rgb(0, 153, 204)
-            risk = 'Low'
-        elif (aqhi_char == '3'):
-            color = discord.Colour.from_rgb(0, 102, 153)
-            risk = 'Low'
-        elif (aqhi_char == '4'):
-            color = discord.Colour.from_rgb(255, 255, 0)
-            risk = 'Moderate'
-        elif (aqhi_char == '5'):
-            color = discord.Colour.from_rgb(255, 204, 0)
-            risk = 'Moderate'
-        elif (aqhi_char == '6'):
-            color = discord.Colour.from_rgb(255, 153, 51)
-            risk = 'Moderate'
-        elif (aqhi_char == '7'):
-            color = discord.Colour.from_rgb(255, 102, 102)
-            risk = 'High'
-        elif (aqhi_char == '8'):
-            color = discord.Colour.from_rgb(255, 0, 0)
-            risk = 'High'
-        elif (aqhi_char == '9'):
-            color = discord.Colour.from_rgb(204, 0, 0)
-            risk = 'High'
-        elif (aqhi_char == '10'):
-            color = discord.Colour.from_rgb(153, 0, 0)
-            risk = 'High'
-        else:
-            color = discord.Colour.from_rgb(102, 0, 0)
-            risk = 'Very High'
-
-        formattedTime = latest['DATE_PST'].strftime("%Y/%m/%d %#I:%M%p")
-
-        embed = discord.Embed(
-            title=f"AQHI of {latest['AQHI_CHAR']} ({risk}) in {latest['AQHI_AREA']}",
-            color=color
-        )
-        embed.set_author(name=f"Updated at {formattedTime}",
-                         url="https://www.env.gov.bc.ca/epd/bcairquality/data/aqhi-table.html")
-        self.cache = embed
-        self.cache_time = datetime.datetime.now()
-        await ctx.send(embed=embed)
+            embed = discord.Embed(
+                title=f"AQHI of {latest['AQHI_CHAR']} ({risk}) in {latest['AQHI_AREA']}",
+                color=color
+            )
+            embed.set_author(name=f"Updated at {formattedTime}",
+                            url="https://www.env.gov.bc.ca/epd/bcairquality/data/aqhi-table.html")
+            self.cache = embed
+            self.cache_time = datetime.datetime.now()
+            await ctx.send(embed=embed)
