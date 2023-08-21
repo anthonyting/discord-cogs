@@ -10,9 +10,9 @@ class Deafen(commands.Cog):
         if (not after.deaf and member.bot):
             await member.edit(reason="Bots don't need to hear", deafen=True)
 
-def setup(bot):
-    bot.add_cog(Deafen(bot))
+async def setup(bot):
+    await bot.add_cog(Deafen(bot))
 
 
-def teardown(bot):
+async def teardown(bot):
     pass

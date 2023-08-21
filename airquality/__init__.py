@@ -5,9 +5,9 @@ from .aqhi import AQHI
 
 aqhiInstance = AQHI()
 
-def setup(bot):
-    bot.add_cog(AirQuality())
-    bot.add_cog(aqhiInstance)
+async def setup(bot):
+    await bot.add_cog(AirQuality())
+    await bot.add_cog(aqhiInstance)
 
-def teardown(bot):
+async def teardown(bot):
     aqhiInstance.teardown()
