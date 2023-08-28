@@ -35,7 +35,7 @@ class AQHI(commands.Cog):
 
     @commands.command(pass_context=True)
     @commands.guild_only()
-    async def air(self, ctx):
+    async def air(self, ctx: commands.Context):
         """Get BC AQHI"""
 
         async with ctx.typing():
@@ -111,11 +111,12 @@ class AQHI(commands.Cog):
             formattedTime = latest['DATE_PST'].strftime("%Y/%m/%d %#I:%M%p")
 
             embed = discord.Embed(
-                title=f"AQHI of {latest['AQHI_CHAR']} ({risk}) in {latest['AQHI_AREA']}",
+                title=f"{risk} Risk ({latest['AQHI_CHAR']}/10)",
                 color=color
-            )
-            embed.set_author(name=f"Updated at {formattedTime}",
-                            url="https://www.env.gov.bc.ca/epd/bcairquality/data/aqhi-table.html")
+            ) \
+            .set_author(name=f"Updated at {formattedTime}",
+                            url="https://www.env.gov.bc.ca/epd/bcairquality/data/aqhi-table.html") \
+            .set_footer(text=f"{latest['AQHI_AREA']}")
             self.cache = embed
             self.cache_time = datetime.datetime.now()
             await ctx.send(embed=embed)
