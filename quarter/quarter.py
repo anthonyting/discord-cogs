@@ -20,10 +20,10 @@ running = False
 dailyLimit = 100
 validURL = re.compile( # https://stackoverflow.com/a/7160778
         r'^(?:http|ftp)s?://' # http:// or https://
-        r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|' #domain...
-        r'localhost|' #localhost...
-        r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})' # ...or ip
-        r'(?::\d+)?' # optional port
+        r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?))' #domain...
+        # r'localhost|' #localhost...
+        # r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})' # ...or ip
+        # r'(?::\d+)?' # optional port
         r'(?:/?|[/?]\S+)$', re.IGNORECASE)
 
 
@@ -107,10 +107,12 @@ class Quarter(commands.Cog):
             # create a new one every time because otherwise it's broken
 
             caller = None
-            displayName = None
             try:
                 while (self.queue):
                     originalWord, replyTo, caller, queueType, data, error, realCtx = self.queue.pop()
+    
+                    displayName = f"{originalWord.title().replace(' ', '').strip()}"
+
                     self.crawler = CustomGoogleCrawler(
                         storage={'root_dir': root_dir},
                         log_level=20,
@@ -120,12 +122,10 @@ class Quarter(commands.Cog):
                     )
 
                     if (error):
-                        await realCtx.send(f"{caller} Error getting Quarter{originalWord}")
+                        await realCtx.send(f"{caller} Error getting Quarter{displayName}")
                         return
 
                     print(f"Getting {originalWord}")
-
-                    displayName = f"{originalWord.title().replace(' ', '').strip()}"
 
                     escapedFilename = urllib.parse.quote(
                         originalWord.lower().strip())[0:150]
@@ -197,7 +197,8 @@ class Quarter(commands.Cog):
                         if (realCtx.channel.is_nsfw()):
                             os.remove(imagePath)
             except Exception as e:
-                print("Error getting and serving: ", e)
+                print("Error getting and serving")
+                print(e)
                 await ctx.send(f"{caller} Error getting Quarter{displayName}")
 
             running = False

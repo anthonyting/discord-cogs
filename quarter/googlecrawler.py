@@ -4,6 +4,8 @@ from typing import Callable, Iterable, List, Optional, cast
 from icrawler.builtin import GoogleImageCrawler, GoogleParser, GoogleFeeder
 from bs4 import BeautifulSoup
 from urllib.parse import urlencode
+import sys
+import logging
 
 from icrawler import ImageDownloader
 
@@ -138,7 +140,10 @@ class CustomGoogleFeeder(GoogleFeeder):
 
 class JsTokenizer:
     def __init__(self) -> None:
-        self._tokenizer = pexpect.popen_spawn.PopenSpawn("node ./tokenize/src/index.js")
+        tokenize_script_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), './tokenize/src/index.js')
+        self._tokenizer = pexpect.popen_spawn.PopenSpawn(f"node {tokenize_script_path}")
+        self._tokenizer.logfile = sys.stdout.buffer if logging.root.level == logging.DEBUG else None
+        self._tokenizer.expect("STARTED TOKENIZER")
         self._tokenizer.delimiter = "DONE"  # type: ignore
 
     def get_strings(
