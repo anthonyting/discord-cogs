@@ -23,6 +23,7 @@ url_regex = re.compile(
     re.IGNORECASE,
 )
 
+
 def is_url(value: str, required_extension: Optional[List[str]] = None) -> bool:
     if url_regex.match(value) is not None:
         if required_extension is None:
@@ -107,14 +108,12 @@ class CustomDownloader(ImageDownloader):
 
 
 class CustomGoogleFeederSafe(GoogleFeeder):
-    def feed(self, keyword, offset, max_num, language=None, filters=None):
+    def feed(self, keyword: str, offset, max_num, language=None, filters=None):
         base_url = "https://www.google.com/search?"
         self.filter = self.get_filter()
         filter_str = self.filter.apply(filters, sep=",")
         for _ in range(offset, offset + max_num, 100):
-            params = dict(
-                q=keyword, tbs=filter_str, tbm="isch"
-            )
+            params = dict(q=keyword.replace(" ", "+"), tbs=filter_str, tbm="isch")
             if language:
                 params["lr"] = "lang_" + language
             url = base_url + urlencode(params) + "&safe=active"
@@ -128,9 +127,7 @@ class CustomGoogleFeeder(GoogleFeeder):
         self.filter = self.get_filter()
         filter_str = self.filter.apply(filters, sep=",")
         for _ in range(offset, offset + max_num, 100):
-            params = dict(
-                q=keyword, tbs=filter_str, tbm="isch"
-            )
+            params = dict(q=keyword.replace(" ", "+"), tbs=filter_str, tbm="isch")
             if language:
                 params["lr"] = "lang_" + language
             url = base_url + urlencode(params)
@@ -140,9 +137,13 @@ class CustomGoogleFeeder(GoogleFeeder):
 
 class JsTokenizer:
     def __init__(self) -> None:
-        tokenize_script_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), './tokenize/src/index.js')
+        tokenize_script_path = os.path.join(
+            os.path.dirname(os.path.abspath(__file__)), "./tokenize/src/index.js"
+        )
         self._tokenizer = pexpect.popen_spawn.PopenSpawn(f"node {tokenize_script_path}")
-        self._tokenizer.logfile = sys.stdout.buffer if logging.root.level == logging.DEBUG else None
+        self._tokenizer.logfile = (
+            sys.stdout.buffer if logging.root.level == logging.DEBUG else None
+        )
         self._tokenizer.expect("STARTED TOKENIZER")
         self._tokenizer.delimiter = "DONE"  # type: ignore
 
