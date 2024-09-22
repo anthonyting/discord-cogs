@@ -1,5 +1,5 @@
 from redbot.core import commands, bot, Config
-from discord import AuditLogEntry, abc
+from discord import AuditLogEntry, abc, Embed
 
 
 class Audit(commands.Cog):
@@ -10,6 +10,12 @@ class Audit(commands.Cog):
         )
         default_guild = {"channel_id": None}
         self.config.register_guild(**default_guild)
+
+    def get_key_value_representation(self, obj: dict):
+        result = ""
+        for key, value in obj.items():
+            result += f"__{key}__ - {value}\n"
+        return result
 
     @commands.Cog.listener(name="on_audit_log_entry_create")
     async def on_audit_log_entry_create(self, entry: AuditLogEntry):
@@ -23,8 +29,39 @@ class Audit(commands.Cog):
         if not channel or not isinstance(channel, abc.Messageable):
             return
 
-        # TODO: make a nicer message with user photo
-        await channel.send(str(entry))
+        if not entry.user:
+            return
+
+        avatar_url = entry.user.display_avatar.url
+        action = entry.action
+        changes = entry.changes
+
+        before = self.get_key_value_representation(dict(changes.before))
+        after = self.get_key_value_representation(dict(changes.after))
+
+        max_length = 400
+
+        embed = Embed(title=entry.user.name).set_thumbnail(url=avatar_url)
+
+        embed.add_field(name="Action", value=action.name)
+        embed.add_field(name="Target", value=entry.target)
+        embed.add_field(name="User", value=entry.user.mention)
+
+        if len(changes.before):
+            embed.add_field(
+                name="Before",
+                value=before[0:max_length]
+                + ("..." if len(before) > max_length else ""),
+            )
+        if len(changes.after):
+            embed.add_field(
+                name="After",
+                value=after[0:max_length] + ("..." if len(after) > max_length else ""),
+            )
+        if entry.extra:
+            embed.add_field(name="Extra", value=entry.extra)
+
+        await channel.send(embed=embed)
 
     @commands.command()
     @commands.is_owner()
