@@ -1,7 +1,8 @@
 from redbot.core import commands, bot, Config
-from discord import AuditLogEntry, abc, Embed
+from discord import AuditLogEntry, abc, Embed, AuditLogAction
 
 
+# TODO: fix representations of extra and diffs
 class Audit(commands.Cog):
     def __init__(self, bot: bot.Red):
         self.bot = bot
@@ -59,7 +60,19 @@ class Audit(commands.Cog):
                 value=after[0:max_length] + ("..." if len(after) > max_length else ""),
             )
         if entry.extra:
-            embed.add_field(name="Extra", value=entry.extra)
+            if (
+                entry.action == AuditLogAction.member_move
+                and hasattr(entry.extra, "channel")
+                and hasattr(entry.extra, "count")
+            ):
+                if entry.extra.channel:
+                    embed.add_field(
+                        name="Channel",
+                        value=entry.extra.channel.mention,
+                    )
+                embed.add_field(name="Count", value=entry.extra.count)
+            else:
+                embed.add_field(name="Extra", value=entry.extra)
 
         await channel.send(embed=embed)
 
