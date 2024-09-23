@@ -1,8 +1,8 @@
 from redbot.core import commands, bot, Config
-from discord import AuditLogEntry, abc, Embed, AuditLogAction
+from discord import AuditLogEntry, abc, Embed
 
 
-# TODO: fix representations of extra and diffs
+# TODO: fix representations of extra and diffs (e.g permissions)
 class Audit(commands.Cog):
     def __init__(self, bot: bot.Red):
         self.bot = bot
@@ -15,7 +15,8 @@ class Audit(commands.Cog):
     def get_key_value_representation(self, obj: dict):
         result = ""
         for key, value in obj.items():
-            result += f"__{key}__ - {value}\n"
+            value_string = value.mention if hasattr(value, "mention") else value
+            result += f"__{key}__ - {value_string}\n"
         return result
 
     @commands.Cog.listener(name="on_audit_log_entry_create")
@@ -45,7 +46,8 @@ class Audit(commands.Cog):
         embed = Embed(title=entry.user.name).set_thumbnail(url=avatar_url)
 
         embed.add_field(name="Action", value=action.name)
-        embed.add_field(name="Target", value=entry.target)
+        if entry.target:
+            embed.add_field(name="Target", value=entry.target)
         embed.add_field(name="User", value=entry.user.mention)
 
         if len(changes.before):
@@ -60,19 +62,17 @@ class Audit(commands.Cog):
                 value=after[0:max_length] + ("..." if len(after) > max_length else ""),
             )
         if entry.extra:
-            if (
-                entry.action == AuditLogAction.member_move
-                and hasattr(entry.extra, "channel")
-                and hasattr(entry.extra, "count")
-            ):
-                if entry.extra.channel:
+            extra = (
+                vars(entry.extra) if hasattr(entry.extra, "__dict__") else entry.extra
+            )
+            if isinstance(extra, dict):
+                for key, value in extra.items():
                     embed.add_field(
-                        name="Channel",
-                        value=entry.extra.channel.mention,
+                        name=key.capitalize(),
+                        value=value.mention if hasattr(value, "mention") else value,
                     )
-                embed.add_field(name="Count", value=entry.extra.count)
             else:
-                embed.add_field(name="Extra", value=entry.extra)
+                embed.add_field(name="Extra", value=extra)
 
         await channel.send(embed=embed)
 
