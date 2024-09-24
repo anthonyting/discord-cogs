@@ -48,7 +48,9 @@ class Audit(commands.Cog):
         embed.add_field(name="Action", value=action.name)
         if entry.target:
             embed.add_field(name="Target", value=entry.target)
-        embed.add_field(name="User", value=entry.user.mention)
+        embed.add_field(
+            name="User", value=f"{entry.user.mention} ({entry.user.display_name})"
+        )
 
         if len(changes.before):
             embed.add_field(
@@ -69,7 +71,11 @@ class Audit(commands.Cog):
                 for key, value in extra.items():
                     embed.add_field(
                         name=key.capitalize(),
-                        value=value.mention if hasattr(value, "mention") else value,
+                        value=(
+                            f"{value.mention} ({value.name})"
+                            if hasattr(value, "mention") and hasattr(value, "name")
+                            else value
+                        ),
                     )
             else:
                 embed.add_field(name="Extra", value=extra)
