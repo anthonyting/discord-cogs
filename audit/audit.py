@@ -43,14 +43,14 @@ class Audit(commands.Cog):
 
         max_length = 400
 
-        embed = Embed(title=entry.user.name).set_thumbnail(url=avatar_url)
+        embed = Embed(
+            title=f"{entry.user.display_name} ({entry.user.name})"
+        ).set_thumbnail(url=avatar_url)
 
         embed.add_field(name="Action", value=action.name)
         if entry.target:
             embed.add_field(name="Target", value=entry.target)
-        embed.add_field(
-            name="User", value=f"{entry.user.mention} ({entry.user.display_name})"
-        )
+        embed.add_field(name="User", value=entry.user.mention)
 
         if len(changes.before):
             embed.add_field(
@@ -72,7 +72,7 @@ class Audit(commands.Cog):
                     embed.add_field(
                         name=key.capitalize(),
                         value=(
-                            f"{value.mention} ({value.name})"
+                            f"{value.name} - {value.mention}"
                             if hasattr(value, "mention") and hasattr(value, "name")
                             else value
                         ),
