@@ -1,5 +1,5 @@
 from redbot.core import commands, bot, Config
-from discord import AuditLogEntry, abc, Embed
+from discord import AuditLogEntry, abc, Embed, TextChannel
 
 
 # TODO: fix representations of extra and diffs (e.g permissions)
@@ -69,14 +69,26 @@ class Audit(commands.Cog):
             )
             if isinstance(extra, dict):
                 for key, value in extra.items():
-                    embed.add_field(
-                        name=key.capitalize(),
-                        value=(
-                            f"{value.name} - {value.mention}"
-                            if hasattr(value, "mention") and hasattr(value, "name")
-                            else value
-                        ),
-                    )
+                    message_channel = extra.get("channel")
+                    if key == "message_id" and isinstance(message_channel, TextChannel):
+                        try:
+                            message = await message_channel.fetch_message(value)
+                            embed.add_field(
+                                name=key.capitalize(), value={message.jump_url}
+                            )
+                        except Exception as e:
+                            print("error fetching message", e)
+                            embed.add_field(name=key.capitalize(), value={value})
+                            pass
+                    else:
+                        embed.add_field(
+                            name=key.capitalize(),
+                            value=(
+                                f"{value.name} - {value.mention}"
+                                if hasattr(value, "mention") and hasattr(value, "name")
+                                else value
+                            ),
+                        )
             else:
                 embed.add_field(name="Extra", value=extra)
 
