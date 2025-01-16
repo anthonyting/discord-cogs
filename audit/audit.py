@@ -132,6 +132,8 @@ class Audit(commands.Cog):
                         )
             else:
                 embed.add_field(name="Extra", value=extra)
+        if entry.reason:
+            embed.add_field(name="Reason", value=entry.reason)
 
         await channel.send(embed=embed)
 
