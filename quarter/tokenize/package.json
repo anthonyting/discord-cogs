@@ -9,10 +9,10 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "js-tokens": "8.0.0"
+    "js-tokens": "^9.0.1"
   },
   "type": "module",
   "devDependencies": {
-    "@types/node": "18.6.2"
+    "@types/node": "^22.13.5"
   }
 }
