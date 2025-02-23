@@ -1,5 +1,5 @@
 from redbot.core import commands, bot, Config
-from discord import AuditLogEntry, abc, Embed, TextChannel, Permissions
+from discord import AuditLogEntry, abc, Embed, TextChannel, Role
 from typing import Any, Tuple
 
 
@@ -15,10 +15,20 @@ class Audit(commands.Cog):
         default_guild = {"channel_id": None}
         self.config.register_guild(**default_guild)
 
+    @staticmethod
+    def get_value_representation(obj: Any) -> str:
+        if isinstance(obj, list):
+            if len(obj) == 1:
+                return Audit.get_value_representation(obj[0])
+
+            return str([Audit.get_value_representation(v) for v in obj])
+
+        return str(obj.mention if hasattr(obj, "mention") else obj)
+
     def get_key_value_representation(self, obj: dict):
         result = ""
         for key, value in obj.items():
-            value_string = value.mention if hasattr(value, "mention") else value
+            value_string = self.get_value_representation(value)
             result += f"__{key}__ - {value_string}\n"
         return result
 
@@ -90,7 +100,9 @@ class Audit(commands.Cog):
 
         embed.add_field(name="Action", value=action.name)
         if entry.target:
-            embed.add_field(name="Target", value=entry.target)
+            embed.add_field(
+                name="Target", value=self.get_value_representation(entry.target)
+            )
         embed.add_field(name="User", value=entry.user.mention)
 
         # to_delete = []
