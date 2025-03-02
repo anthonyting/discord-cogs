@@ -1,9 +1,8 @@
 from redbot.core import commands, bot, Config
-from discord import AuditLogEntry, abc, Embed, TextChannel, Role
-from typing import Any, Tuple
+from discord import AuditLogEntry, Permissions, abc, Embed, TextChannel
+from typing import Any, List
 
 
-# TODO: fix representations of extra and diffs (e.g permissions)
 class Audit(commands.Cog):
     MAX_LENGTH = 500
 
@@ -53,24 +52,35 @@ class Audit(commands.Cog):
                 print("error fetching message", e)
         embed.add_field(name="Message", value=value)
 
-    # todo: show permissions better
-    # def handle_permission_values(
-    #     self, key: str, embed: Embed, before: Permissions, after: Permissions
-    # ):
-    #     difference = before ^ after
+    def handle_permission_values(
+        self,
+        key: str,
+        embed: Embed,
+        before: Permissions,
+        after: Permissions,
+        permissions_reset: List[str],
+    ):
+        result_after = ""
 
-    #     result_before = ""
-    #     for perm, value in before:
-    #         if difference[perm] != value:
-    #             result_before += f"__{perm}__ - {value}\n"
+        permissions_changed = before ^ after
+        for perm, is_changed in permissions_changed:
+            if is_changed:
+                after_value = getattr(after, perm)
+                if after_value:
+                    result_after += f"- {perm}\n"
+                else:
+                    permissions_reset.append(perm)
 
-    #     result_after = ""
-    #     for perm, value in after:
-    #         if difference[perm] != value:
-    #             result_after += f"__{perm}__ - {value}\n"
-
-    #     embed.add_field(name=f"{key} (before)", value=result_before)
-    #     embed.add_field(name=f"{key} (after)", value=result_after)
+        if result_after:
+            renamed_key = key
+            if key == "deny":
+                renamed_key = "Denied permissions"
+            elif key == "allow":
+                renamed_key = "Granted permissions"
+            else:
+                renamed_key = "Updated permissions"
+            embed.add_field(name=renamed_key, value=result_after)
+        return embed
 
     @commands.Cog.listener(name="on_audit_log_entry_create")
     async def on_audit_log_entry_create(self, entry: AuditLogEntry):
@@ -105,18 +115,28 @@ class Audit(commands.Cog):
             )
         embed.add_field(name="User", value=entry.user.mention)
 
-        # to_delete = []
-        # for key, before_value in before_dict.items():
-        #     after_value = after_dict.get(key)
-        #     if isinstance(before_value, Permissions) and isinstance(
-        #         after_value, Permissions
-        #     ):
-        #         self.handle_permission_values(key, embed, before_value, after_value)
-        #         to_delete.append(key)
+        permissions_reset: List[str] = []
 
-        # for key in to_delete:
-        #     del before_dict[key]
-        #     del after_dict[key]
+        to_delete = []
+        for key, before_value in before_dict.items():
+            after_value = after_dict.get(key)
+            if isinstance(before_value, Permissions) and isinstance(
+                after_value, Permissions
+            ):
+                self.handle_permission_values(
+                    key, embed, before_value, after_value, permissions_reset
+                )
+                to_delete.append(key)
+
+        if permissions_reset:
+            embed.add_field(
+                name="Reset permissions",
+                value="".join([f"- {value}\n" for value in permissions_reset]),
+            )
+
+        for key in to_delete:
+            del before_dict[key]
+            del after_dict[key]
 
         before = self.get_key_value_representation(before_dict)
         after = self.get_key_value_representation(after_dict)
@@ -127,7 +147,9 @@ class Audit(commands.Cog):
             embed.add_field(name="After", value=self.trim_text(after))
         if entry.extra:
             extra = (
-                vars(entry.extra) if hasattr(entry.extra, "__dict__") else entry.extra
+                vars(entry.extra)
+                if hasattr(entry.extra, "__dict__")
+                else self.get_value_representation(entry.extra)
             )
             if isinstance(extra, dict):
                 for key, value in extra.items():
@@ -145,7 +167,9 @@ class Audit(commands.Cog):
             else:
                 embed.add_field(name="Extra", value=extra)
         if entry.reason:
-            embed.add_field(name="Reason", value=entry.reason)
+            embed.add_field(
+                name="Reason", value=self.get_value_representation(entry.reason)
+            )
 
         await channel.send(embed=embed)
 
