@@ -8,3 +8,4 @@ Custom personal cogs for [redbot](https://docs.discord.red/en/stable/)
 - airquality gets the air quality in vancouver
 - sportsday sends sportsday emojis
 - sportsday is also a tic tac toe game using sportsday emojis and redbot economy
+- audit reports audit log entries to the specified channel
