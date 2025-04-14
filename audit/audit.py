@@ -22,7 +22,13 @@ class Audit(commands.Cog):
 
             return str([Audit.get_value_representation(v) for v in obj])
 
-        return str(obj.mention if hasattr(obj, "mention") else obj)
+        if hasattr(obj, "mention"):
+            return str(obj.mention)
+
+        if hasattr(obj, "name") and hasattr(obj, "id"):
+            return f"{obj.name} ({obj.id})"
+
+        return str(obj)
 
     def get_key_value_representation(self, obj: dict):
         result = ""
