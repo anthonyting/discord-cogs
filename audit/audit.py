@@ -31,11 +31,14 @@ class Audit(commands.Cog):
         return str(obj)
 
     def get_key_value_representation(self, obj: dict):
+        all_none = True
         result = ""
         for key, value in obj.items():
+            if value is not None:
+                all_none = False
             value_string = self.get_value_representation(value)
             result += f"__{key}__ - {value_string}\n"
-        return result
+        return result if not all_none else None
 
     @staticmethod
     def trim_text(text: str) -> str:
@@ -147,10 +150,18 @@ class Audit(commands.Cog):
         before = self.get_key_value_representation(before_dict)
         after = self.get_key_value_representation(after_dict)
 
-        if len(before_dict):
-            embed.add_field(name="Before", value=self.trim_text(before))
-        if len(after_dict):
-            embed.add_field(name="After", value=self.trim_text(after))
+        if before is not None or after is not None:
+            if before is not None:
+                if len(before_dict):
+                    embed.add_field(name="Before", value=self.trim_text(before))
+
+            if after is not None:
+                if len(after_dict):
+                    embed.add_field(
+                        name="After" if before is not None else "Attributes",
+                        value=self.trim_text(after),
+                    )
+
         if entry.extra:
             extra = (
                 vars(entry.extra)
